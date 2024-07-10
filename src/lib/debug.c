@@ -34,4 +34,3 @@ size_t disassembleInstruction(Chunk *chunk, size_t offset) {
             return offset + 1;
     }
 }
-

@@ -7,38 +7,36 @@
 #define clox_chunk_h
 
 #include "common.h"
-#include "memory.h"
 
 /**
- * @brief Bytecode opcode type
+ * @brief Bytecode opcode values.
  */
 typedef enum {
     OP_RETURN,
 } OpCode;
 
 /**
- * @brief Dynamic array of opcodes
+ * @brief Stores series of opcode in a chunk in the form of a dynamic array.
  */
 typedef struct {
     size_t count;
     size_t capacity;
-    uint8_t* code;
+    uint8_t *code;
 } Chunk;
 
 /**
- * @brief Initialize Chunk
+ * @brief Initialize Chunk.
  */
-void initChunk(Chunk* chunk);
+void initChunk(Chunk *chunk);
 
 /**
- * @brief Push back new byte
+ * @brief Append new opcode byte to `Chunk`.
  */
-void writeChunk(Chunk* chunk, uint8_t byte);
+void writeChunk(Chunk *chunk, uint8_t byte);
 
 /**
- * @brief Frees Chunk array
+ * @brief Frees `Chunk`.
  */
-void freeChunk(Chunk* chunk);
+void freeChunk(Chunk *chunk);
 
-#endif  // clox_chunk_h
-
+#endif // clox_chunk_h

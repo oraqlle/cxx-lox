@@ -1,6 +1,7 @@
-/** @brief Bytecode representation of Lox
+/**
+ * @brief Memory management facilitis for internal types and VM
  *
- * @file chunk.h
+ * @file memory.h
  */
 
 #ifndef clox_memory_h
@@ -8,19 +9,31 @@
 
 #include "common.h"
 
-#define GROW_CAPACITY(capacity) \
-    ((capacity) < 8 ? 8 : (capacity) * 2)
+/**
+ * @brief Growth algorithm for `Chunk`.
+ *
+ * @details Immediately bumps capacity value to 8 if previous capacity is less
+ * than 8 to avoid repeated, small allocations early in a `Chunks` lifecycle.
+ */
+#define GROW_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity)*2)
 
- #define GROW_ARRAY(type, pointer, oldCount, newCount) \
-     (type*)reallocate(pointer, sizeof(type) * (oldCount), sizeof(type) * (newCount))
+/**
+ * @brief Makes `reallocate()` less cumbersome to use for growthing a `Chunk`.
+ */
+#define GROW_ARRAY(type, pointer, oldCount, newCount)                          \
+    (type *)reallocate(pointer, sizeof(type) * (oldCount),                     \
+                       sizeof(type) * (newCount))
 
-#define FREE_ARRAY(type, pointer, oldCount) \
+/**
+ * @brief Makes free operations with `reallocate()` less cumbersome for
+ * `Chunks`.
+ */
+#define FREE_ARRAY(type, pointer, oldCount)                                    \
     reallocate(pointer, sizeof(type) * (oldCount), 0)
 
 /**
  * @brief Single heap memory management function for VM
  */
-void* reallocate(void* pointer, size_t oldSize, size_t newSize);
+void *reallocate(void *pointer, size_t oldSize, size_t newSize);
 
-#endif  // clox_memory_h
-
+#endif // clox_memory_h

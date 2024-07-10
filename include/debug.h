@@ -1,6 +1,7 @@
-/** @brief Bytecode representation of Lox
+/**
+ * @brief Disassembly tools
  *
- * @file chunk.h
+ * @file debug.h
  */
 
 #ifndef clox_debug_h
@@ -11,14 +12,13 @@
 #include "chunk.h"
 
 /**
- * @brief Disassembles chunks
+ * @brief Disassembles bytecode `Chunks`.
  */
-void disassembleChunk(Chunk* chunk, const char* name);
+void disassembleChunk(Chunk *chunk, const char *name);
 
 /**
- * @brief Disassemble individual instruction
+ * @brief Disassembles an individual instruction
  */
 size_t disassembleInstruction(Chunk *chunk, size_t offset);
 
-#endif  // clox_debug_h
-
+#endif // clox_debug_h
