@@ -11,4 +11,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef CLOX_DEVELOPER_MODE
+#define DEBUG_TRACE_EXECUTION
+#endif
+
 #endif // clox_common_h

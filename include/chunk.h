@@ -13,7 +13,7 @@
  * @brief Bytecode opcode values.
  */
 typedef enum {
-    OP_CONSTANT,  //< Maybe rename to OP_LITERAL
+    OP_CONSTANT, //< Maybe rename to OP_LITERAL
     OP_RETURN,
 } OpCode;
 
@@ -25,7 +25,7 @@ typedef struct {
     size_t count;
     size_t capacity;
     uint8_t *code;
-    size_t * lines;
+    size_t *lines;
     ValueArray constants;
 } Chunk;
 

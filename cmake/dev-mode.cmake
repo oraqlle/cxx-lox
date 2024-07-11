@@ -1,5 +1,7 @@
 include(cmake/folders.cmake)
 
+add_compile_definitions(CLOX_DEVELOPER_MODE)
+
 include(CTest)
 
 if(BUILD_TESTING)

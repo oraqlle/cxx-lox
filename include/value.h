@@ -1,7 +1,7 @@
 /**
- * @brief Bytecode representation of Lox
+ * @brief Types and structures for values in Lox
  *
- * @file array.h
+ * @file value.h
  */
 
 #ifndef clox_value_h
