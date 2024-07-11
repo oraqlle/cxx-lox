@@ -10,25 +10,23 @@
 #include "common.h"
 
 /**
- * @brief Growth algorithm for `Chunk`.
+ * @brief Growth algorithm for dynamic array types.
  *
  * @details Immediately bumps capacity value to 8 if previous capacity is less
- * than 8 to avoid repeated, small allocations early in a `Chunks` lifecycle.
+ * than 8 to avoid repeated, small allocations early in a dynamic array's lifecycle.
  */
 #define GROW_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity)*2)
 
 /**
- * @brief Makes `reallocate()` less cumbersome to use for growthing a `Chunk`.
+ * @brief Grows a dynamic array using `reallocate()`.
  */
-#define GROW_ARRAY(type, pointer, oldCount, newCount)                          \
-    (type *)reallocate(pointer, sizeof(type) * (oldCount),                     \
-                       sizeof(type) * (newCount))
+#define GROW_ARRAY(type, pointer, oldCount, newCount)                                    \
+    (type *)reallocate(pointer, sizeof(type) * (oldCount), sizeof(type) * (newCount))
 
 /**
- * @brief Makes free operations with `reallocate()` less cumbersome for
- * `Chunks`.
+ * @brief Frees a dynamic array using `reallocate()`.
  */
-#define FREE_ARRAY(type, pointer, oldCount)                                    \
+#define FREE_ARRAY(type, pointer, oldCount)                                              \
     reallocate(pointer, sizeof(type) * (oldCount), 0)
 
 /**

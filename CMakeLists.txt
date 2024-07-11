@@ -18,6 +18,7 @@ add_library(
     src/lib/chunk.c
     src/lib/memory.c
     src/lib/debug.c
+    src/lib/value.c
 )
 
 target_include_directories(

@@ -59,7 +59,7 @@ jobs:
     - name: Test
       working-directory: build/coverage
       # Temporary run so coverage report can be generated
-      run: build/coverage/clox
+      run: clox
       # run: ctest --output-on-failure --no-tests=error -j 2
 
     - name: Process coverage info
