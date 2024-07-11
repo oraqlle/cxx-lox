@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #ifdef CLOX_DEVELOPER_MODE
+#undef DEBUG_TRACE_EXECUTION
 #define DEBUG_TRACE_EXECUTION
 #endif
 

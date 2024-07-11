@@ -1,5 +1,5 @@
 /**
- * @brief Disassembly tools and debugging facilites for VM
+ * @brief Disassembly tools and debugging facilities for VM
  *
  * @file debug.h
  */
