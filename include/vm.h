@@ -9,6 +9,7 @@
 
 #include "chunk.h"
 #include "common.h"
+#include "scanner.h"
 #include "value.h"
 
 #define STACK_MAX 256
@@ -45,7 +46,7 @@ void freeVM(VM *vm);
 /**
  * @brief Interprets a chunk of bytecode.
  */
-InterpreterResult interpret(VM *vm, Chunk *chunk);
+InterpreterResult interpret(VM *vm, Scanner *scanner, const char *source);
 
 /**
  * @brief Push to VM stack.

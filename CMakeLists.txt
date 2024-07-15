@@ -12,10 +12,6 @@ project(
 
 include(cmake/variables.cmake)
 
-if(CLOX_DEVELOPER_MODE)
-    add_compile_definitions(DEBUG_TRACE_EXECUTION=0)
-endif()
-
 # ---- Declare library ----
 add_library(
     clox_lib OBJECT
@@ -24,6 +20,8 @@ add_library(
     src/lib/debug.c
     src/lib/value.c
     src/lib/vm.c
+    src/lib/compiler.c
+    src/lib/scanner.c
 )
 
 target_include_directories(

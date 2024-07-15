@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "chunk.h"
+#include "compiler.h"
 #include "debug.h"
 #include "value.h"
 #include "vm.h"
@@ -70,11 +71,10 @@ static InterpreterResult run(VM *vm) {
 #undef BINARY_OP
 }
 
-InterpreterResult interpret(VM *vm, Chunk *chunk) {
-    vm->chunk = chunk;
-    vm->ip = vm->chunk->code;
+InterpreterResult interpret(VM *vm, Scanner *scanner, const char *source) {
+    compile(vm, scanner, source);
 
-    return run(vm);
+    return INTERPRETER_OK;
 }
 
 void push(VM *vm, Value value) {
