@@ -72,9 +72,21 @@ static InterpreterResult run(VM *vm) {
 }
 
 InterpreterResult interpret(VM *vm, Scanner *scanner, const char *source) {
-    compile(vm, scanner, source);
+    Chunk chunk;
+    initChunk(&chunk);
 
-    return INTERPRETER_OK;
+    if (!compile(scanner, source, &chunk)) {
+        freeChunk(&chunk);
+        return INTERPRETER_COMPILE_ERR;
+    }
+    
+    vm->chunk = &chunk;
+    vm->ip = vm->chunk->code;
+
+    InterpreterResult result = run(vm);
+
+    freeChunk(&chunk);
+    return result;
 }
 
 void push(VM *vm, Value value) {

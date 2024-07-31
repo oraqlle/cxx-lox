@@ -14,6 +14,9 @@
 #ifdef CLOX_DEVELOPER_MODE
 #undef DEBUG_TRACE_EXECUTION
 #define DEBUG_TRACE_EXECUTION
+
+#undef DEBUG_PRINT_CODE
+#define DEBUG_PRINT_CODE
 #endif
 
 #endif // clox_common_h
