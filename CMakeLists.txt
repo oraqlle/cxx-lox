@@ -11,8 +11,6 @@ project(
 
 include(cmake/variables.cmake)
 
-set(CMAKE_COLOR_DIAGNOSTICS ON)
-
 # ---- Declare library ----
 add_library(
     clox_lib OBJECT
