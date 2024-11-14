@@ -6,11 +6,12 @@ project(
     clox
     VERSION 0.1.0
     DESCRIPTION "Lox Bytecode Interpreter in C"
-    HOMEPAGE_URL "https://example.com/"
     LANGUAGES C
 )
 
 include(cmake/variables.cmake)
+
+set(CMAKE_COLOR_DIAGNOSTICS ON)
 
 # ---- Declare library ----
 add_library(

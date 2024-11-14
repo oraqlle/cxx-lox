@@ -10,8 +10,7 @@
       "name": "dev-mode",
       "hidden": true,
       "cacheVariables": {
-        "CLOX_DEVELOPER_MODE": "ON",
-        "VCPKG_MANIFEST_FEATURES": "test"
+        "CLOX_DEVELOPER_MODE": "ON"
       }
     },
     {
@@ -39,11 +38,11 @@
       "name": "clang-tidy",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_C_CLANG_TIDY": "clang-tidy;--header-filter=^${sourceDir}/"
+        "CMAKE_C_CLANG_TIDY": "clang-tidy;--use-color;--header-filter=^${sourceDir}/"
       }
     },
     {
-      "name": "ci-std",
+      "name": "std-tgt",
       "description": "This preset makes sure the project actually builds with at least the specified standard",
       "hidden": true,
       "cacheVariables": {
@@ -79,10 +78,10 @@
       }
     },
     {
-      "name": "ci-linux",
+      "name": "linux-build",
       "inherits": [
           "flags-gcc-clang",
-          "ci-std"
+          "std-tgt"
       ],
       "hidden": true,
       "cacheVariables": {
@@ -90,18 +89,18 @@
       }
     },
     {
-      "name": "ci-darwin",
+      "name": "darwin",
       "inherits": [
           "flags-appleclang",
-          "ci-std"
+          "std-tgt"
       ],
       "hidden": true
     },
     {
-      "name": "ci-win64",
+      "name": "win64",
       "inherits": [
           "flags-msvc",
-          "ci-std"
+          "std-tgt"
       ],
       "architecture": "x64",
       "hidden": true
@@ -109,7 +108,7 @@
     {
       "name": "coverage-linux",
       "binaryDir": "${sourceDir}/build/coverage",
-      "inherits": "ci-linux",
+        "inherits": "linux-build",
       "hidden": true,
       "cacheVariables": {
         "ENABLE_COVERAGE": "ON",
@@ -120,7 +119,7 @@
       }
     },
     {
-      "name": "ci-coverage",
+      "name": "coverage",
       "inherits": [
           "coverage-linux",
           "dev-mode",
@@ -131,10 +130,10 @@
       }
     },
     {
-      "name": "ci-sanitize",
+      "name": "sanitize",
       "binaryDir": "${sourceDir}/build/sanitize",
       "inherits": [
-          "ci-linux",
+          "linux",
           "dev-mode",
           "vcpkg"
       ],
@@ -144,12 +143,12 @@
       }
     },
     {
-      "name": "ci-build",
+      "name": "build",
       "binaryDir": "${sourceDir}/build",
       "hidden": true
     },
     {
-      "name": "ci-multi-config",
+      "name": "multi-config",
       "description": "Speed up multi-config generators by generating only one configuration instead of the defaults",
       "hidden": true,
       "cacheVariables": {
@@ -157,33 +156,31 @@
       }
     },
     {
-      "name": "ci-macos",
+      "name": "macos",
       "inherits": [
-          "ci-build",
-          "ci-darwin",
+          "build",
+          "darwin",
           "dev-mode",
-          "ci-multi-config",
+          "multi-config",
           "vcpkg"
       ]
     },
     {
-      "name": "ci-ubuntu",
+      "name": "linux",
       "inherits": [
-          "ci-build",
-          "ci-linux",
-          "clang-tidy",
-          "cppcheck",
+          "build",
+          "linux-build",
           "dev-mode",
           "vcpkg"
       ]
     },
     {
-      "name": "ci-windows",
+      "name": "windows",
       "inherits": [
-          "ci-build",
-          "ci-win64",
+          "build",
+          "win64",
           "dev-mode",
-          "ci-multi-config",
+          "multi-config",
           "vcpkg",
           "vcpkg-win64-static"
       ]

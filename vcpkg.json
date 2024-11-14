@@ -3,16 +3,6 @@
   "version-semver": "0.1.0",
   "dependencies": [],
   "default-features": [],
-  "features": {
-    "test": {
-      "description": "Dependencies for testing",
-      "dependencies": [
-        "catch2"
-      ]
-    }
-  },
-  "overrides": [
-    { "name": "catch2", "version": "2.13.9#1" }
-  ],
+  "features": {},
   "builtin-baseline": "ad25766aefb5313b6bc4e2a4b78a2946f84fbf66"
 }
