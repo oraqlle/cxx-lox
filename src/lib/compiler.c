@@ -4,6 +4,7 @@
 #include "compiler.h"
 #include "chunk.h"
 #include "scanner.h"
+#include "value.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -132,6 +133,22 @@ static void binary(Parser *parser, Scanner *scanner) {
     }
 }
 
+static void literal(Parser *parser, Scanner *scanner) {
+    switch (parser->previous.type) {
+        case TOKEN_FALSE:
+            emitByte(parser, OP_FALSE);
+            break;
+        case TOKEN_NIL:
+            emitByte(parser, OP_NIL);
+            break;
+        case TOKEN_TRUE:
+            emitByte(parser, OP_TRUE);
+            break;
+        default:
+            return;
+    }
+}
+
 static void grouping(Parser *parser, Scanner *scanner) {
     expression(parser, scanner);
     consume(parser, scanner, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
@@ -139,7 +156,7 @@ static void grouping(Parser *parser, Scanner *scanner) {
 
 static void number(Parser *parser, Scanner *scanner) {
     double value = strtod(parser->previous.start, NULL);
-    emitConstant(parser, value);
+    emitConstant(parser, NUMBER_VAL(value));
 }
 
 static void unary(Parser *parser, Scanner *scanner) {
@@ -184,17 +201,17 @@ ParseRule rules[] = {
     [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},
     [TOKEN_CLASS]         = {NULL,     NULL,   PREC_NONE},
     [TOKEN_ELSE]          = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_FALSE]         = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_FALSE]         = {literal,  NULL,   PREC_NONE},
     [TOKEN_FOR]           = {NULL,     NULL,   PREC_NONE},
     [TOKEN_FUN]           = {NULL,     NULL,   PREC_NONE},
     [TOKEN_IF]            = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_NIL]           = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_NIL]           = {literal,  NULL,   PREC_NONE},
     [TOKEN_OR]            = {NULL,     NULL,   PREC_NONE},
     [TOKEN_PRINT]         = {NULL,     NULL,   PREC_NONE},
     [TOKEN_RETURN]        = {NULL,     NULL,   PREC_NONE},
     [TOKEN_SUPER]         = {NULL,     NULL,   PREC_NONE},
     [TOKEN_THIS]          = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_TRUE]          = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_TRUE]          = {literal,  NULL,   PREC_NONE},
     [TOKEN_VAR]           = {NULL,     NULL,   PREC_NONE},
     [TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
     [TOKEN_ERROR]         = {NULL,     NULL,   PREC_NONE},
@@ -242,3 +259,4 @@ bool compile(Scanner *scanner, const char *source, Chunk *chunk) {
     endCompiler(&parser);
     return !parser.hadError;
 }
+

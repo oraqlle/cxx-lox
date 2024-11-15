@@ -57,3 +57,4 @@ typedef struct {
 bool compile(Scanner *scanner, const char *source, Chunk *chunk);
 
 #endif // clox_compiler_h
+

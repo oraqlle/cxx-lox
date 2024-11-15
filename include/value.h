@@ -10,9 +10,44 @@
 #include "common.h"
 
 /**
- * @brief Type alias for numerics values.
+ * @brief Tags for Lox types
  */
-typedef double Value;
+typedef enum {
+    VAL_BOOL,
+    VAL_NIL,
+    VAL_NUMBER,
+} ValueType;
+
+/**
+ * @brief Tagged union used to represent dynamic types of Lox
+ */
+typedef struct {
+    ValueType type;
+    union {
+        bool boolean;
+        double number;
+    } as;
+} Value;
+
+/**
+ * @brief Validates that dynamic type holds expected type (ie. has expected tag.)
+ */
+#define IS_BOOL(value)      ((value).type == VAL_BOOL)
+#define IS_NIL(value)       ((value).type == VAL_NIL)
+#define IS_NUMBER(value)    ((value).type == VAL_NUMBER)
+
+/**
+ * @brief Extracts value from dynamic Lox type (tagged union)
+ */
+#define AS_BOOL(value)      ((value).as.boolean)
+#define AS_NUMBER(value)    ((value).as.number)
+
+/**
+ * @brief Helper macros for constructing tagged union of a particular type.
+ */
+#define BOOL_VAL(value)     ((Value){VAL_BOOL, { .boolean = (value) }})
+#define NIL_VAL             ((Value){VAL_NIL, { .number = 0 }})
+#define NUMBER_VAL(value)   ((Value){VAL_NUMBER, { .number = (value) }})
 
 /**
  * @brief Dynamic array of values.
@@ -44,3 +79,4 @@ void freeValueArray(ValueArray *array);
 void printValue(Value value);
 
 #endif // clox_value_h
+

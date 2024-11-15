@@ -14,6 +14,9 @@
  */
 typedef enum {
     OP_CONSTANT, //< Maybe rename to OP_LITERAL
+    OP_NIL,
+    OP_TRUE,
+    OP_FALSE,
     OP_ADD,
     OP_SUBTRACT,
     OP_MULTIPLY,
