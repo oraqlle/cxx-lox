@@ -74,6 +74,11 @@ void writeValueArray(ValueArray *array, Value value);
 void freeValueArray(ValueArray *array);
 
 /**
+ * @brief Checks if two Values are equal.
+ */
+bool valuesEqual(Value a, Value b);
+
+/**
  * @brief Prints Value
  */
 void printValue(Value value);
