@@ -21,6 +21,10 @@ static ObjString *allocateString(char *chars, size_t length) {
     return string;
 }
 
+ObjString *takeString(char *chars, size_t length) {
+    return allocateString(chars, length);
+}
+
 ObjString *copyString(const char *chars, size_t length) {
     char *heapChars = ALLOCATE(char, length + 1);
     memcpy(heapChars, chars, length);

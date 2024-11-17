@@ -41,6 +41,11 @@ struct ObjString {
 };
 
 /**
+ * @brief Takes ownership of raw char data it is passed
+ */
+ObjString *takeString(char *chars, size_t length);
+
+/**
  * @brief Copies a string literal from scanned texted into string object
  */
 ObjString *copyString(const char *chars, size_t length);
