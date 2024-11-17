@@ -59,4 +59,3 @@ void push(VM *vm, Value value);
 Value pop(VM *vm);
 
 #endif // clox_vm_h
-

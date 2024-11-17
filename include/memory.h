@@ -15,7 +15,7 @@
  * @details Immediately bumps capacity value to 8 if previous capacity is less
  * than 8 to avoid repeated, small allocations early in a dynamic array's lifecycle.
  */
-#define GROW_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity)*2)
+#define GROW_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity) * 2)
 
 /**
  * @brief Grows a dynamic array using `reallocate()`.
@@ -28,6 +28,8 @@
  */
 #define FREE_ARRAY(type, pointer, oldCount)                                              \
     reallocate(pointer, sizeof(type) * (oldCount), 0)
+
+#define ALLOCATE(type, count) (type *)reallocate(NULL, 0, sizeof(type) * (count))
 
 /**
  * @brief Single heap memory management function for VM

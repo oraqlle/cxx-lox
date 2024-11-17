@@ -8,6 +8,7 @@
 #define clox_compiler_h
 
 #include "chunk.h"
+#include "object.h"
 #include "scanner.h"
 
 /**
@@ -38,9 +39,9 @@ typedef enum {
 } Precedence;
 
 /**
- * @brief Function type for functions in parsing loopup table.
+ * @brief Function type for functions in parsing lookup table.
  */
-typedef void (*ParseFn)(Parser*, Scanner*);
+typedef void (*ParseFn)(Parser *, Scanner *);
 
 /**
  * @brief Parsing rule.
@@ -57,4 +58,3 @@ typedef struct {
 bool compile(Scanner *scanner, const char *source, Chunk *chunk);
 
 #endif // clox_compiler_h
-

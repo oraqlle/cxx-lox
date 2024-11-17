@@ -5,6 +5,7 @@
 #include "common.h"
 #include "compiler.h"
 #include "debug.h"
+#include "object.h"
 #include "value.h"
 #include "vm.h"
 
@@ -37,15 +38,15 @@ static InterpreterResult run(VM *vm) {
 #define READ_BYTE() (*(vm)->ip++)
 #define READ_CONSTANT() ((vm)->chunk->constants.values[READ_BYTE()])
 
-#define BINARY_OP(valueType, op)  \
-    do {  \
-        if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) {  \
-            runtimeError(vm, "Operands must be numbers.");  \
-            return INTERPRETER_RUNTIME_ERR;  \
-        }  \
-        double b = AS_NUMBER(pop(vm));  \
-        double a = AS_NUMBER(pop(vm));  \
-        push(vm, valueType(a op b));  \
+#define BINARY_OP(valueType, op)                                                         \
+    do {                                                                                 \
+        if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) {                        \
+            runtimeError(vm, "Operands must be numbers.");                               \
+            return INTERPRETER_RUNTIME_ERR;                                              \
+        }                                                                                \
+        double b = AS_NUMBER(pop(vm));                                                   \
+        double a = AS_NUMBER(pop(vm));                                                   \
+        push(vm, valueType(a op b));                                                     \
     } while (false)
 
     for (;;) {

@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "compiler.h"
 #include "chunk.h"
+#include "compiler.h"
+#include "object.h"
 #include "scanner.h"
 #include "value.h"
 
@@ -10,11 +11,9 @@
 #include "debug.h"
 #endif // DEBUG_PRINT_CODE
 
-Chunk* compilingChunk;
+Chunk *compilingChunk;
 
-static Chunk* currentChunk(void) {
-    return compilingChunk;
-}
+static Chunk *currentChunk(void) { return compilingChunk; }
 
 static void errorAt(Parser *parser, Token *token, const char *message) {
     if (parser->panicMode) {
@@ -58,7 +57,8 @@ static void advance(Parser *parser, Scanner *scanner) {
     }
 }
 
-static void consume(Parser *parser, Scanner *scanner, TokenType type, const char *message) {
+static void consume(Parser *parser, Scanner *scanner, TokenType type,
+                    const char *message) {
     if (parser->current.type == type) {
         advance(parser, scanner);
         return;
@@ -76,9 +76,7 @@ static void emitBytes(Parser *parser, uint8_t byte1, uint8_t byte2) {
     emitByte(parser, byte2);
 }
 
-static void emitReturn(Parser *parser) {
-    emitByte(parser, OP_RETURN);
-}
+static void emitReturn(Parser *parser) { emitByte(parser, OP_RETURN); }
 
 static uint8_t makeConstant(Parser *parser, Value value) {
     uint8_t constant = addConstant(currentChunk(), value);
@@ -100,7 +98,7 @@ static void endCompiler(Parser *parser) {
 
 #ifdef DEBUG_PRINT_CODE
     if (!parser->hadError) {
-        disassembleChunk(currentChunk(), "code") ;
+        disassembleChunk(currentChunk(), "code");
     }
 #endif // DEBUG_PRINT_CODE
 }
@@ -147,7 +145,7 @@ static void binary(Parser *parser, Scanner *scanner) {
             emitByte(parser, OP_DIVIDE);
             break;
         default:
-            return;  // Unreachable
+            return; // Unreachable
     }
 }
 
@@ -163,7 +161,7 @@ static void literal(Parser *parser, Scanner *scanner) {
             emitByte(parser, OP_TRUE);
             break;
         default:
-            return;  // Unreachable
+            return; // Unreachable
     }
 }
 
@@ -175,6 +173,11 @@ static void grouping(Parser *parser, Scanner *scanner) {
 static void number(Parser *parser, Scanner *scanner) {
     double value = strtod(parser->previous.start, NULL);
     emitConstant(parser, NUMBER_VAL(value));
+}
+
+static void string(Parser *parser, Scanner *scanner) {
+    emitConstant(parser, OBJ_VAL(copyString(parser->previous.start + 1,
+                                            parser->previous.length - 2)));
 }
 
 static void unary(Parser *parser, Scanner *scanner) {
@@ -192,9 +195,11 @@ static void unary(Parser *parser, Scanner *scanner) {
             emitByte(parser, OP_NEGATE);
             break;
         default:
-            return;  // Unreachable
+            return; // Unreachable
     }
 }
+
+// clang-format off
 
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN]    = {grouping, NULL,   PREC_NONE},
@@ -217,7 +222,7 @@ ParseRule rules[] = {
     [TOKEN_LESS]          = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_LESS_EQUAL]    = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_IDENTIFIER]    = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_STRING]        = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_STRING]        = {string,   NULL,   PREC_NONE},
     [TOKEN_NUMBER]        = {number,   NULL,   PREC_NONE},
     [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},
     [TOKEN_CLASS]         = {NULL,     NULL,   PREC_NONE},
@@ -239,6 +244,8 @@ ParseRule rules[] = {
     [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
 };
 
+// clang-format on
+
 static void parsePrecedence(Parser *parser, Scanner *scanner, Precedence precedence) {
     advance(parser, scanner);
 
@@ -254,13 +261,11 @@ static void parsePrecedence(Parser *parser, Scanner *scanner, Precedence precede
     while (precedence <= getRule(parser->current.type)->precedence) {
         advance(parser, scanner);
         ParseFn infixRule = getRule(parser->previous.type)->infix;
-        infixRule(parser, scanner);    
+        infixRule(parser, scanner);
     }
 }
 
-static ParseRule *getRule(TokenType type) {
-    return &rules[type];
-}
+static ParseRule *getRule(TokenType type) { return &rules[type]; }
 
 static void expression(Parser *parser, Scanner *scanner) {
     parsePrecedence(parser, scanner, PREC_ASSIGNMENT);
@@ -280,4 +285,3 @@ bool compile(Scanner *scanner, const char *source, Chunk *chunk) {
     endCompiler(&parser);
     return !parser.hadError;
 }
-

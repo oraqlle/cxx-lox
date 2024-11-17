@@ -62,7 +62,7 @@ static void skipWhitespace(Scanner *scanner) {
                 }
                 break;
             default:
-                return;  // Unreachable
+                return; // Unreachable
         }
     }
 }
