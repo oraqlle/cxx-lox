@@ -15,13 +15,14 @@ include(cmake/variables.cmake)
 add_library(
     clox_lib OBJECT
     src/lib/chunk.c
-    src/lib/object.c
-    src/lib/memory.c
+    src/lib/compiler.c
     src/lib/debug.c
+    src/lib/memory.c
+    src/lib/object.c
+    src/lib/scanner.c
+    src/lib/table.c
     src/lib/value.c
     src/lib/vm.c
-    src/lib/compiler.c
-    src/lib/scanner.c
 )
 
 target_include_directories(

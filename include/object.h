@@ -2,7 +2,9 @@
 #define clox_object_h
 
 #include "common.h"
+#include "vm.h"
 #include "value.h"
+#include <stdint.h>
 
 /**
  * @brief Obtains the type tag of an object
@@ -32,23 +34,25 @@ typedef enum {
  */
 struct Obj {
     ObjType type;
+    struct Obj *next;
 };
 
 struct ObjString {
     Obj obj;
     size_t length;
     char *chars;
+    uint32_t hash;
 };
 
 /**
  * @brief Takes ownership of raw char data it is passed
  */
-ObjString *takeString(char *chars, size_t length);
+ObjString *takeString(size_t length, char *chars, VM *vm);
 
 /**
  * @brief Copies a string literal from scanned texted into string object
  */
-ObjString *copyString(const char *chars, size_t length);
+ObjString *copyString(size_t length, const char *chars, VM *vm);
 
 /**
  * @brief Helper function for displaying objects.

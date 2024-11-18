@@ -42,13 +42,18 @@ static void concatenate(VM *vm) {
     memcpy(chars + a->length, b->chars, b->length);
     chars[length] = '\0';
 
-    ObjString *string = takeString(chars, length);
+    ObjString *string = takeString(chars, length, vm);
     push(vm, OBJ_VAL(string));
 }
 
-void initVM(VM *vm) { resetStack(vm); }
+void initVM(VM *vm) {
+    resetStack(vm);
+    vm->objects = NULL;
+}
 
-void freeVM(VM *vm) {}
+void freeVM(VM *vm) {
+    freeObjects(vm);
+}
 
 static InterpreterResult run(VM *vm) {
 #define READ_BYTE() (*(vm)->ip++)
@@ -153,7 +158,7 @@ InterpreterResult interpret(VM *vm, Scanner *scanner, const char *source) {
     Chunk chunk;
     initChunk(&chunk);
 
-    if (!compile(scanner, source, &chunk)) {
+    if (!compile(scanner, source, &chunk, vm)) {
         freeChunk(&chunk);
         return INTERPRETER_COMPILE_ERR;
     }

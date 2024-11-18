@@ -41,7 +41,7 @@ typedef enum {
 /**
  * @brief Function type for functions in parsing lookup table.
  */
-typedef void (*ParseFn)(Parser *, Scanner *);
+typedef void (*ParseFn)(Parser *, Scanner *, VM *);
 
 /**
  * @brief Parsing rule.
@@ -55,6 +55,6 @@ typedef struct {
 /**
  * @brief Compiles string of Lox source into bytecode.
  */
-bool compile(Scanner *scanner, const char *source, Chunk *chunk);
+bool compile(Scanner *scanner, const char *source, Chunk *chunk, VM *vm);
 
 #endif // clox_compiler_h
