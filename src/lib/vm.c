@@ -103,18 +103,19 @@ static InterpreterResult run(VM *vm) {
             case OP_FALSE:
                 push(vm, BOOL_VAL(false));
                 break;
-            case OP_EQUAL:
+            case OP_EQUAL: {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 push(vm, BOOL_VAL(valuesEqual(a, b)));
                 break;
+            }
             case OP_GREATER:
                 BINARY_OP(BOOL_VAL, >);
                 break;
             case OP_LESS:
                 BINARY_OP(BOOL_VAL, <);
                 break;
-            case OP_ADD:
+            case OP_ADD: {
                 if (IS_STRING(peek(vm, 0)) && IS_STRING(peek(vm, 1))) {
                     concatenate(vm);
                 } else if (IS_NUMBER(peek(vm, 0)) && IS_NUMBER(peek(vm, 1))) {
@@ -126,6 +127,7 @@ static InterpreterResult run(VM *vm) {
                     return INTERPRETER_RUNTIME_ERR;
                 }
                 break;
+            }
             case OP_SUBTRACT:
                 BINARY_OP(NUMBER_VAL, -);
                 break;
@@ -138,16 +140,21 @@ static InterpreterResult run(VM *vm) {
             case OP_NOT:
                 push(vm, BOOL_VAL(isFalsey(pop(vm))));
                 break;
-            case OP_NEGATE:
+            case OP_NEGATE: {
                 if (!IS_NUMBER(peek(vm, 0))) {
                     runtimeError(vm, "Operand must be a number.");
                     return INTERPRETER_RUNTIME_ERR;
                 }
                 push(vm, NUMBER_VAL(-AS_NUMBER(pop(vm))));
                 break;
-            case OP_RETURN: {
+            }
+            case OP_PRINT: {
                 printValue(pop(vm));
                 printf("\n");
+                break;
+            }
+            case OP_RETURN: {
+                // Exit interpreter
                 return INTERPRETER_OK;
             }
         }

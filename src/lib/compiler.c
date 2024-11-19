@@ -67,6 +67,19 @@ static void consume(Parser *parser, Scanner *scanner, TokenType type,
     errorAtCurrent(parser, message);
 }
 
+static bool check(Parser *parser, TokenType type) {
+    return parser->current.type == type;
+}
+
+static bool match(Parser *parser, Scanner *scanner, TokenType type) {
+    if (!check(parser, type)) {
+        return false;
+    }
+
+    advance(parser, scanner);
+    return true;
+}
+
 static void emitByte(Parser *parser, uint8_t byte) {
     writeChunk(currentChunk(), byte, parser->previous.line);
 }
@@ -105,6 +118,8 @@ static void endCompiler(Parser *parser) {
 
 // Forward declarations
 static void expression(Parser *parser, Scanner *scanner, VM *vm);
+static void declaration(Parser *parser, Scanner *scanner, VM *vm);
+static void statement(Parser *parser, Scanner *scanner, VM *vm);
 static ParseRule *getRule(TokenType type);
 static void parsePrecedence(Parser *parser, Scanner *scanner, Precedence precedence,
                             VM *vm);
@@ -273,6 +288,22 @@ static void expression(Parser *parser, Scanner *scanner, VM *vm) {
     parsePrecedence(parser, scanner, PREC_ASSIGNMENT, vm);
 }
 
+static void printStatement(Parser *parser, Scanner *scanner, VM *vm) {
+    expression(parser, scanner, vm);
+    consume(parser, scanner, TOKEN_SEMICOLON, "Expect ';' after value.");
+    emitByte(parser, OP_PRINT);
+}
+
+static void declaration(Parser *parser, Scanner *scanner, VM *vm) {
+    statement(parser, scanner, vm);
+}
+
+static void statement(Parser *parser, Scanner *scanner, VM *vm) {
+    if (match(parser, scanner, TOKEN_PRINT)) {
+        printStatement(parser, scanner, vm);
+    }
+}
+
 bool compile(Scanner *scanner, const char *source, Chunk *chunk, VM *vm) {
     initScanner(scanner, source);
     compilingChunk = chunk;
@@ -282,8 +313,11 @@ bool compile(Scanner *scanner, const char *source, Chunk *chunk, VM *vm) {
     parser.panicMode = false;
 
     advance(&parser, scanner);
-    expression(&parser, scanner, vm);
-    consume(&parser, scanner, TOKEN_EOF, "Expect end of expression.");
+
+    while (!match(&parser, scanner, TOKEN_EOF)) {
+        declaration(&parser, scanner, vm);
+    }
+
     endCompiler(&parser);
     return !parser.hadError;
 }
