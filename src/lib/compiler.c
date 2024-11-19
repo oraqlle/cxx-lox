@@ -1,3 +1,5 @@
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -67,9 +69,7 @@ static void consume(Parser *parser, Scanner *scanner, TokenType type,
     errorAtCurrent(parser, message);
 }
 
-static bool check(Parser *parser, TokenType type) {
-    return parser->current.type == type;
-}
+static bool check(Parser *parser, TokenType type) { return parser->current.type == type; }
 
 static bool match(Parser *parser, Scanner *scanner, TokenType type) {
     if (!check(parser, type)) {
@@ -123,6 +123,10 @@ static void statement(Parser *parser, Scanner *scanner, VM *vm);
 static ParseRule *getRule(TokenType type);
 static void parsePrecedence(Parser *parser, Scanner *scanner, Precedence precedence,
                             VM *vm);
+
+static uint8_t identifierConstant(Parser *parser, Token *name, VM *vm) {
+    return makeConstant(parser, OBJ_VAL(copyString(name->length, name->start, vm)));
+}
 
 static void binary(Parser *parser, Scanner *scanner, VM *vm) {
     TokenType operatorType = parser->previous.type;
@@ -288,19 +292,84 @@ static void expression(Parser *parser, Scanner *scanner, VM *vm) {
     parsePrecedence(parser, scanner, PREC_ASSIGNMENT, vm);
 }
 
+static uint8_t parseVariable(Parser *parser, Scanner *scanner, VM *vm,
+                             const char *errorMsg) {
+    consume(parser, scanner, TOKEN_IDENTIFIER, errorMsg);
+    return identifierConstant(parser, &parser->previous, vm);
+}
+
+static void defineVariable(Parser *parser, uint8_t global) {
+    emitBytes(parser, OP_DEFINE_GLOBAL, global);
+}
+
+static void varDeclaration(Parser *parser, Scanner *scanner, VM *vm) {
+    uint8_t global = parseVariable(parser, scanner, vm, "Expect variable name.");
+
+    if (match(parser, scanner, TOKEN_EQUAL)) {
+        expression(parser, scanner, vm);
+    } else {
+        emitByte(parser, OP_NIL);
+    }
+
+    consume(parser, scanner, TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+
+    defineVariable(parser, global);
+}
+
+static void expressionStatement(Parser *parser, Scanner *scanner, VM *vm) {
+    expression(parser, scanner, vm);
+    consume(parser, scanner, TOKEN_SEMICOLON, "Expect ';' after expression.");
+    emitByte(parser, OP_POP);
+}
+
 static void printStatement(Parser *parser, Scanner *scanner, VM *vm) {
     expression(parser, scanner, vm);
     consume(parser, scanner, TOKEN_SEMICOLON, "Expect ';' after value.");
     emitByte(parser, OP_PRINT);
 }
 
+static void synchronize(Parser *parser, Scanner *scanner) {
+    parser->panicMode = false;
+
+    while (parser->current.type != TOKEN_EOF) {
+        if (parser->previous.type == TOKEN_SEMICOLON) {
+            return;
+        }
+
+        switch (parser->current.type) {
+            case TOKEN_CLASS:
+            case TOKEN_FUN:
+            case TOKEN_VAR:
+            case TOKEN_FOR:
+            case TOKEN_IF:
+            case TOKEN_WHILE:
+            case TOKEN_PRINT:
+            case TOKEN_RETURN:
+                return;
+            default:; // Do nothing
+        }
+    }
+
+    advance(parser, scanner);
+}
+
 static void declaration(Parser *parser, Scanner *scanner, VM *vm) {
-    statement(parser, scanner, vm);
+    if (match(parser, scanner, TOKEN_VAR)) {
+        varDeclaration(parser, scanner, vm);
+    } else {
+        statement(parser, scanner, vm);
+    }
+
+    if (parser->panicMode) {
+        synchronize(parser, scanner);
+    }
 }
 
 static void statement(Parser *parser, Scanner *scanner, VM *vm) {
     if (match(parser, scanner, TOKEN_PRINT)) {
         printStatement(parser, scanner, vm);
+    } else {
+        expressionStatement(parser, scanner, vm);
     }
 }
 
