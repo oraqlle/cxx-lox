@@ -4,7 +4,6 @@
 #include "common.h"
 #include "value.h"
 #include "vm.h"
-#include <stdint.h>
 
 /**
  * @brief Obtains the type tag of an object

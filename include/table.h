@@ -2,7 +2,6 @@
 #define clox_table_h
 
 #include "common.h"
-#include "object.h"
 #include "value.h"
 
 /**
@@ -55,5 +54,10 @@ bool tableGet(Table *from, ObjString *key, Value *value);
  * @brief Deletes and entry from hash table
  */
 bool tableDelete(Table *table, ObjString *key);
+
+/**
+ * @brief Finds a particular string entry in a hash table, avoiding the use of findEntry()
+ */
+ObjString *tableFindString(Table *table, const char *chars, size_t length, uint32_t hash);
 
 #endif // clox_table_h
