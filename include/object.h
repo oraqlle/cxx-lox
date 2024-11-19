@@ -2,8 +2,8 @@
 #define clox_object_h
 
 #include "common.h"
-#include "vm.h"
 #include "value.h"
+#include "vm.h"
 #include <stdint.h>
 
 /**

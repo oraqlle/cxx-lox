@@ -2,6 +2,7 @@
 #define clox_table_h
 
 #include "common.h"
+#include "object.h"
 #include "value.h"
 
 /**
@@ -34,8 +35,25 @@ void freeTable(Table *table);
 /**
  * @brief Inserts or sets key entry with value.
  *
- * @returns true when entry is inserted and fals when updated
+ * @returns true when entry is inserted and fails when updated
  */
 bool tableSet(Table *table, ObjString *key, Value value);
+
+/**
+ * @brief Copies all entries from one hash table to another.
+ */
+void tableAddAll(Table *from, Table *to);
+
+/**
+ * @brief Extract pointer to entry i hash table
+ *
+ * @returns true if entry is found, false otherwise
+ */
+bool tableGet(Table *from, ObjString *key, Value *value);
+
+/**
+ * @brief Deletes and entry from hash table
+ */
+bool tableDelete(Table *table, ObjString *key);
 
 #endif // clox_table_h

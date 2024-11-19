@@ -7,7 +7,8 @@
 #include "value.h"
 #include "vm.h"
 
-#define ALLOCATE_OBJ(type, vm, objectType) (type *)allocateObject(sizeof(type), vm, objectType)
+#define ALLOCATE_OBJ(type, vm, objectType)                                               \
+    (type *)allocateObject(sizeof(type), vm, objectType)
 
 static void *allocateObject(size_t size, VM *vm, ObjType type) {
     Obj *object = (Obj *)reallocate(NULL, 0, size);

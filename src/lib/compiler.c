@@ -106,7 +106,8 @@ static void endCompiler(Parser *parser) {
 // Forward declarations
 static void expression(Parser *parser, Scanner *scanner, VM *vm);
 static ParseRule *getRule(TokenType type);
-static void parsePrecedence(Parser *parser, Scanner *scanner, Precedence precedence, VM *vm);
+static void parsePrecedence(Parser *parser, Scanner *scanner, Precedence precedence,
+                            VM *vm);
 
 static void binary(Parser *parser, Scanner *scanner, VM *vm) {
     TokenType operatorType = parser->previous.type;
@@ -176,9 +177,8 @@ static void number(Parser *parser, Scanner *scanner, VM *vm) {
 }
 
 static void string(Parser *parser, Scanner *scanner, VM *vm) {
-    emitConstant(parser, OBJ_VAL(copyString(parser->previous.start + 1,
-                                            parser->previous.length - 2,
-                                            vm)));
+    emitConstant(parser, OBJ_VAL(copyString(parser->previous.length - 2,
+                                            parser->previous.start + 1, vm)));
 }
 
 static void unary(Parser *parser, Scanner *scanner, VM *vm) {
@@ -247,7 +247,8 @@ ParseRule rules[] = {
 
 // clang-format on
 
-static void parsePrecedence(Parser *parser, Scanner *scanner, Precedence precedence, VM *vm) {
+static void parsePrecedence(Parser *parser, Scanner *scanner, Precedence precedence,
+                            VM *vm) {
     advance(parser, scanner);
 
     ParseFn prefixRule = getRule(parser->previous.type)->prefix;

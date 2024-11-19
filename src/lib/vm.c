@@ -42,7 +42,7 @@ static void concatenate(VM *vm) {
     memcpy(chars + a->length, b->chars, b->length);
     chars[length] = '\0';
 
-    ObjString *string = takeString(chars, length, vm);
+    ObjString *string = takeString(length, chars, vm);
     push(vm, OBJ_VAL(string));
 }
 
@@ -51,9 +51,7 @@ void initVM(VM *vm) {
     vm->objects = NULL;
 }
 
-void freeVM(VM *vm) {
-    freeObjects(vm);
-}
+void freeVM(VM *vm) { freeObjects(vm); }
 
 static InterpreterResult run(VM *vm) {
 #define READ_BYTE() (*(vm)->ip++)
