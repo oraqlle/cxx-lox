@@ -200,6 +200,15 @@ static void string(Parser *parser, Scanner *scanner, VM *vm) {
                                             parser->previous.start + 1, vm)));
 }
 
+static void namedVariable(Parser *parser, Token name, VM *vm) {
+    uint8_t arg = identifierConstant(parser, &name, vm);
+    emitBytes(parser, OP_GET_GLOBAL, arg);
+}
+
+static void variable(Parser *parser, Scanner *scanner, VM *vm) {
+    namedVariable(parser, parser->previous, vm);
+}
+
 static void unary(Parser *parser, Scanner *scanner, VM *vm) {
     TokenType operatorType = parser->previous.type;
 
@@ -241,7 +250,7 @@ ParseRule rules[] = {
     [TOKEN_GREATER_EQUAL] = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_LESS]          = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_LESS_EQUAL]    = {NULL,     binary, PREC_COMPARISON},
-    [TOKEN_IDENTIFIER]    = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_IDENTIFIER]    = {variable, NULL,   PREC_NONE},
     [TOKEN_STRING]        = {string,   NULL,   PREC_NONE},
     [TOKEN_NUMBER]        = {number,   NULL,   PREC_NONE},
     [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},
