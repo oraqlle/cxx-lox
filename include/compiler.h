@@ -39,20 +39,6 @@ typedef enum {
 } Precedence;
 
 /**
- * @brief Function type for functions in parsing lookup table.
- */
-typedef void (*ParseFn)(Parser *, Scanner *, VM *, bool);
-
-/**
- * @brief Parsing rule.
- */
-typedef struct {
-    ParseFn prefix;
-    ParseFn infix;
-    Precedence precedence;
-} ParseRule;
-
-/**
  * @brief Local variables
  */
 typedef struct {
@@ -68,6 +54,20 @@ typedef struct {
     size_t localCount;
     size_t scopeDepth;
 } Compiler;
+
+/**
+ * @brief Function type for functions in parsing lookup table.
+ */
+typedef void (*ParseFn)(Parser *, Scanner *, VM *, Compiler *, bool);
+
+/**
+ * @brief Parsing rule.
+ */
+typedef struct {
+    ParseFn prefix;
+    ParseFn infix;
+    Precedence precedence;
+} ParseRule;
 
 /**
  * @brief Initializes compiler
