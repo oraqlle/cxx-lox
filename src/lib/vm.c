@@ -128,6 +128,17 @@ static InterpreterResult run(VM *vm) {
                 pop(vm);
                 break;
             }
+            case OP_SET_GLOBAL: {
+                ObjString *name = READ_STRING();
+
+                if (tableSet(&vm->globals, name, peek(vm, 0))) {
+                    tableDelete(&vm->globals, name);
+                    runtimeError(vm, "Undefined variable '%s'.", name->chars);
+                    return INTERPRETER_RUNTIME_ERR;
+                }
+
+                break;
+            }
             case OP_EQUAL: {
                 Value b = pop(vm);
                 Value a = pop(vm);

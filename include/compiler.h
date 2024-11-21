@@ -41,7 +41,7 @@ typedef enum {
 /**
  * @brief Function type for functions in parsing lookup table.
  */
-typedef void (*ParseFn)(Parser *, Scanner *, VM *);
+typedef void (*ParseFn)(Parser *, Scanner *, VM *, bool);
 
 /**
  * @brief Parsing rule.
@@ -51,6 +51,28 @@ typedef struct {
     ParseFn infix;
     Precedence precedence;
 } ParseRule;
+
+/**
+ * @brief Local variables
+ */
+typedef struct {
+    Token name;
+    size_t depth;
+} Local;
+
+/**
+ * @brief Compilers representation of the VM stack
+ */
+typedef struct {
+    Local locals[UINT8_COUNT];
+    size_t localCount;
+    size_t scopeDepth;
+} Compiler;
+
+/**
+ * @brief Initializes compiler
+ */
+void initCompiler(Compiler *compiler);
 
 /**
  * @brief Compiles string of Lox source into bytecode.

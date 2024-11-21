@@ -11,6 +11,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define UINT8_COUNT (UINT8_MAX + 1)
+
 #ifdef CLOX_DEVELOPER_MODE
 #undef DEBUG_TRACE_EXECUTION
 #define DEBUG_TRACE_EXECUTION
