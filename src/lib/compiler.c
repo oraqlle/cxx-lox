@@ -151,12 +151,12 @@ static bool identifiersEqual(Token *a, Token *b) {
     return memcmp(a->start, b->start, a->length) == 0;
 }
 
-static size_t resolveLocal(Parser *parser, Compiler *compiler, Token *name) {
-    for (size_t i = compiler->localCount - 1; i >= 0; i--) {
+static intmax_t resolveLocal(Parser *parser, Compiler *compiler, Token *name) {
+    for (intmax_t i = compiler->localCount - 1; i >= 0; i--) {
         Local *local = &compiler->locals[i];
 
         if (identifiersEqual(name, &local->name)) {
-            if (local->depth == (size_t)-1) {
+            if (local->depth == -1) {
                 error(parser, "Can't read local variable in its own initializer.");
             }
 
@@ -164,7 +164,7 @@ static size_t resolveLocal(Parser *parser, Compiler *compiler, Token *name) {
         }
     }
 
-    return (size_t)-1;
+    return -1;
 }
 
 static void addLocal(Parser *parser, Compiler *compiler, Token name) {
@@ -175,7 +175,7 @@ static void addLocal(Parser *parser, Compiler *compiler, Token name) {
 
     Local *local = &compiler->locals[compiler->localCount++];
     local->name = name;
-    local->depth = (size_t)-1;
+    local->depth = -1;
 }
 
 static void declareVariable(Parser *parser, Compiler *compiler) {
@@ -185,10 +185,10 @@ static void declareVariable(Parser *parser, Compiler *compiler) {
 
     Token *name = &parser->previous;
 
-    for (size_t i = compiler->localCount - 1; i >= 0; i--) {
+    for (intmax_t i = compiler->localCount - 1; i >= 0; i--) {
         Local *local = &compiler->locals[i];
 
-        if (local->depth != (size_t)-1 && local->depth < compiler->scopeDepth) {
+        if (local->depth != -1 && local->depth < compiler->scopeDepth) {
             break;
         }
 
@@ -281,9 +281,9 @@ static void namedVariable(Parser *parser, Scanner *scanner, VM *vm, Compiler *co
                           bool canAssign, Token name) {
     uint8_t getOp;
     uint8_t setOp;
-    size_t arg = resolveLocal(parser, compiler, &name);
+    intmax_t arg = resolveLocal(parser, compiler, &name);
 
-    if (arg != (size_t)-1) {
+    if (arg != -1) {
         getOp = OP_GET_LOCAL;
         setOp = OP_SET_LOCAL;
     } else {
@@ -294,9 +294,9 @@ static void namedVariable(Parser *parser, Scanner *scanner, VM *vm, Compiler *co
 
     if (canAssign && match(parser, scanner, TOKEN_EQUAL)) {
         expression(parser, scanner, vm, compiler);
-        emitBytes(parser, OP_SET_GLOBAL, (uint8_t)arg);
+        emitBytes(parser, setOp, (uint8_t)arg);
     } else {
-        emitBytes(parser, OP_GET_GLOBAL, (uint8_t)arg);
+        emitBytes(parser, getOp, (uint8_t)arg);
     }
 }
 
@@ -405,7 +405,7 @@ static void expression(Parser *parser, Scanner *scanner, VM *vm, Compiler *compi
 }
 
 static void block(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
-    while (!check(parser, TOKEN_LEFT_BRACE) && !check(parser, TOKEN_EOF)) {
+    while (!check(parser, TOKEN_RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
         declaration(parser, scanner, vm, compiler);
     }
 

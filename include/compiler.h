@@ -8,6 +8,7 @@
 #define clox_compiler_h
 
 #include "chunk.h"
+#include "common.h"
 #include "object.h"
 #include "scanner.h"
 
@@ -43,7 +44,7 @@ typedef enum {
  */
 typedef struct {
     Token name;
-    size_t depth;
+    intmax_t depth;
 } Local;
 
 /**
@@ -51,8 +52,8 @@ typedef struct {
  */
 typedef struct {
     Local locals[UINT8_COUNT];
-    size_t localCount;
-    size_t scopeDepth;
+    intmax_t localCount;
+    intmax_t scopeDepth;
 } Compiler;
 
 /**
