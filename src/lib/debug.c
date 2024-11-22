@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 
 #include "chunk.h"
@@ -28,6 +29,12 @@ static size_t simpleInstruction(const char *name, size_t offset) {
     return offset + 1;
 }
 
+static size_t byteInstruction(const char *name, Chunk *chunk, size_t offset) {
+    uint8_t slot = chunk->code[offset + 1];
+    printf("%-16s %4d\n", name, slot);
+    return offset + 2;
+}
+
 size_t disassembleInstruction(Chunk *chunk, size_t offset) {
     printf("%04zu ", offset);
 
@@ -50,10 +57,14 @@ size_t disassembleInstruction(Chunk *chunk, size_t offset) {
             return simpleInstruction("OP_FALSE", offset);
         case OP_POP:
             return simpleInstruction("OP_POP", offset);
+        case OP_GET_LOCAL:
+            return constantInstruction("OP_GET_LOCAL", chunk, offset);
         case OP_GET_GLOBAL:
             return constantInstruction("OP_GET_GLOBAL", chunk, offset);
         case OP_DEFINE_GLOBAL:
-            return constantInstruction("OP_DEFINE_GLOBAL", chunk, offset);
+            return byteInstruction("OP_DEFINE_GLOBAL", chunk, offset);
+        case OP_SET_LOCAL:
+            return byteInstruction("OP_SET_LOCAL", chunk, offset);
         case OP_SET_GLOBAL:
             return constantInstruction("OP_SET_GLOBAL", chunk, offset);
         case OP_EQUAL:

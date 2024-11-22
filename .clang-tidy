@@ -32,4 +32,5 @@ CheckOptions:
     value: 'true'
   - key: 'readability-inconsistent-declaration-parameter-name.Strict'
     value: 'true'
-...
+  - key: 'readability-identifier-length.MinimumParameterNameLength'
+    value: '0'

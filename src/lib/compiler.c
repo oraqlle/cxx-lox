@@ -2,8 +2,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "chunk.h"
+#include "common.h"
 #include "compiler.h"
 #include "object.h"
 #include "scanner.h"
@@ -116,18 +118,90 @@ static void endCompiler(Parser *parser) {
 #endif // DEBUG_PRINT_CODE
 }
 
+static void beginScope(Compiler *compiler) { compiler->scopeDepth += 1; }
+
+static void endScope(Parser *parser, Compiler *compiler) {
+    compiler->scopeDepth -= 1;
+
+    while (compiler->localCount > 0 &&
+           compiler->locals[compiler->localCount - 1].depth > compiler->scopeDepth) {
+        //! Could create OP_POPN opcode to pop multiple values off the stack at once.
+        emitByte(parser, OP_POP);
+        compiler->localCount -= 1;
+    }
+}
+
 // Forward declarations
 static void expression(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler);
 static void declaration(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler);
 static void statement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler);
 static ParseRule *getRule(TokenType type);
-static void parsePrecedence(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler, Precedence precedence);
+static void parsePrecedence(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                            Precedence precedence);
 
-static uint8_t identifierConstant(Parser *parser, Token *name, VM *vm) {
+static uint8_t identifierConstant(Parser *parser, VM *vm, Token *name) {
     return makeConstant(parser, OBJ_VAL(copyString(name->length, name->start, vm)));
 }
 
-static void binary(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler, bool canAssign) {
+static bool identifiersEqual(Token *a, Token *b) {
+    if (a->length != b->length) {
+        return false;
+    }
+
+    return memcmp(a->start, b->start, a->length) == 0;
+}
+
+static size_t resolveLocal(Parser *parser, Compiler *compiler, Token *name) {
+    for (size_t i = compiler->localCount - 1; i >= 0; i--) {
+        Local *local = &compiler->locals[i];
+
+        if (identifiersEqual(name, &local->name)) {
+            if (local->depth == (size_t)-1) {
+                error(parser, "Can't read local variable in its own initializer.");
+            }
+
+            return i;
+        }
+    }
+
+    return (size_t)-1;
+}
+
+static void addLocal(Parser *parser, Compiler *compiler, Token name) {
+    if (compiler->localCount == UINT8_COUNT) {
+        error(parser, "Too many local variables in function.");
+        return;
+    }
+
+    Local *local = &compiler->locals[compiler->localCount++];
+    local->name = name;
+    local->depth = (size_t)-1;
+}
+
+static void declareVariable(Parser *parser, Compiler *compiler) {
+    if (compiler->scopeDepth == 0) {
+        return;
+    }
+
+    Token *name = &parser->previous;
+
+    for (size_t i = compiler->localCount - 1; i >= 0; i--) {
+        Local *local = &compiler->locals[i];
+
+        if (local->depth != (size_t)-1 && local->depth < compiler->scopeDepth) {
+            break;
+        }
+
+        if (identifiersEqual(name, &local->name)) {
+            error(parser, "Already a variable with this name in this scope.");
+        }
+    }
+
+    addLocal(parser, compiler, *name);
+}
+
+static void binary(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                   bool canAssign) {
     TokenType operatorType = parser->previous.type;
     ParseRule *rule = getRule(operatorType);
     parsePrecedence(parser, scanner, vm, compiler, (Precedence)(rule->precedence + 1));
@@ -168,7 +242,8 @@ static void binary(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
     }
 }
 
-static void literal(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler, bool canAssign) {
+static void literal(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                    bool canAssign) {
     switch (parser->previous.type) {
         case TOKEN_FALSE:
             emitByte(parser, OP_FALSE);
@@ -184,37 +259,54 @@ static void literal(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler
     }
 }
 
-static void grouping(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler, bool canAssign) {
+static void grouping(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                     bool canAssign) {
     expression(parser, scanner, vm, compiler);
     consume(parser, scanner, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
-static void number(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler, bool canAssign) {
+static void number(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                   bool canAssign) {
     double value = strtod(parser->previous.start, NULL);
     emitConstant(parser, NUMBER_VAL(value));
 }
 
-static void string(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler, bool canAssign) {
+static void string(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                   bool canAssign) {
     emitConstant(parser, OBJ_VAL(copyString(parser->previous.length - 2,
                                             parser->previous.start + 1, vm)));
 }
 
-static void namedVariable(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler, bool canAssign, Token name) {
-    uint8_t arg = identifierConstant(parser, &name, vm);
+static void namedVariable(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                          bool canAssign, Token name) {
+    uint8_t getOp;
+    uint8_t setOp;
+    size_t arg = resolveLocal(parser, compiler, &name);
+
+    if (arg != (size_t)-1) {
+        getOp = OP_GET_LOCAL;
+        setOp = OP_SET_LOCAL;
+    } else {
+        arg = identifierConstant(parser, vm, &name);
+        getOp = OP_GET_GLOBAL;
+        setOp = OP_SET_GLOBAL;
+    }
 
     if (canAssign && match(parser, scanner, TOKEN_EQUAL)) {
         expression(parser, scanner, vm, compiler);
-        emitBytes(parser, OP_SET_GLOBAL, arg);
+        emitBytes(parser, OP_SET_GLOBAL, (uint8_t)arg);
     } else {
-        emitBytes(parser, OP_GET_GLOBAL, arg);
+        emitBytes(parser, OP_GET_GLOBAL, (uint8_t)arg);
     }
 }
 
-static void variable(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler, bool canAssign) {
+static void variable(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                     bool canAssign) {
     namedVariable(parser, scanner, vm, compiler, canAssign, parser->previous);
 }
 
-static void unary(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler, bool canAssign) {
+static void unary(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                  bool canAssign) {
     TokenType operatorType = parser->previous.type;
 
     // Compile operand.
@@ -280,7 +372,8 @@ ParseRule rules[] = {
 
 // clang-format on
 
-static void parsePrecedence(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler, Precedence precedence) {
+static void parsePrecedence(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                            Precedence precedence) {
     advance(parser, scanner);
 
     ParseFn prefixRule = getRule(parser->previous.type)->prefix;
@@ -319,18 +412,35 @@ static void block(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) 
     consume(parser, scanner, TOKEN_RIGHT_BRACE, "Expect '}' after block.");
 }
 
-static uint8_t parseVariable(Parser *parser, Scanner *scanner, VM *vm,
+static uint8_t parseVariable(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
                              const char *errorMsg) {
     consume(parser, scanner, TOKEN_IDENTIFIER, errorMsg);
-    return identifierConstant(parser, &parser->previous, vm);
+
+    declareVariable(parser, compiler);
+
+    if (compiler->scopeDepth > 0) {
+        return 0;
+    }
+
+    return identifierConstant(parser, vm, &parser->previous);
 }
 
-static void defineVariable(Parser *parser, uint8_t global) {
+static void markInitialized(Compiler *compiler) {
+    compiler->locals[compiler->localCount - 1].depth = compiler->scopeDepth;
+}
+
+static void defineVariable(Parser *parser, Compiler *compiler, uint8_t global) {
+    if (compiler->scopeDepth > 0) {
+        markInitialized(compiler);
+        return;
+    }
+
     emitBytes(parser, OP_DEFINE_GLOBAL, global);
 }
 
 static void varDeclaration(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
-    uint8_t global = parseVariable(parser, scanner, vm, "Expect variable name.");
+    uint8_t global =
+        parseVariable(parser, scanner, vm, compiler, "Expect variable name.");
 
     if (match(parser, scanner, TOKEN_EQUAL)) {
         expression(parser, scanner, vm, compiler);
@@ -340,10 +450,11 @@ static void varDeclaration(Parser *parser, Scanner *scanner, VM *vm, Compiler *c
 
     consume(parser, scanner, TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
 
-    defineVariable(parser, global);
+    defineVariable(parser, compiler, global);
 }
 
-static void expressionStatement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
+static void expressionStatement(Parser *parser, Scanner *scanner, VM *vm,
+                                Compiler *compiler) {
     expression(parser, scanner, vm, compiler);
     consume(parser, scanner, TOKEN_SEMICOLON, "Expect ';' after expression.");
     emitByte(parser, OP_POP);
@@ -396,9 +507,9 @@ static void statement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compil
     if (match(parser, scanner, TOKEN_PRINT)) {
         printStatement(parser, scanner, vm, compiler);
     } else if (match(parser, scanner, TOKEN_LEFT_BRACE)) {
-        beginScope();
-        block();
-        endScope();
+        beginScope(compiler);
+        block(parser, scanner, vm, compiler);
+        endScope(parser, compiler);
     } else {
         expressionStatement(parser, scanner, vm, compiler);
     }
