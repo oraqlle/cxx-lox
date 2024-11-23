@@ -35,7 +35,7 @@ static size_t byteInstruction(const char *name, Chunk *chunk, size_t offset) {
     return offset + 2;
 }
 
-static size_t jumpInstruction(const char *name, size_t sign, Chunk *chunk,
+static size_t jumpInstruction(const char *name, int8_t sign, Chunk *chunk,
                               size_t offset) {
     uint16_t jmp = (uint16_t)(chunk->code[offset + 1] << 8);
     jmp |= chunk->code[offset + 2];
@@ -99,6 +99,8 @@ size_t disassembleInstruction(Chunk *chunk, size_t offset) {
             return jumpInstruction("OP_JUMP", 1, chunk, offset);
         case OP_JUMP_IF_FALSE:
             return jumpInstruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
+        case OP_LOOP:
+            return jumpInstruction("OP_LOOP", -1, chunk, offset);
         case OP_RETURN:
             return simpleInstruction("OP_RETURN", offset);
         default:

@@ -98,6 +98,19 @@ static size_t emitJump(Parser *parser, uint8_t instruction) {
     return currentChunk()->count - 2;
 }
 
+static void emitLoop(Parser *parser, size_t loopStart) {
+    emitByte(parser, OP_LOOP);
+
+    size_t offset = currentChunk()->count - loopStart + 2;
+
+    if (offset > UINT16_MAX) {
+        error(parser, "Loop body too large.");
+    }
+
+    emitByte(parser, (offset >> 8) & 0xff);
+    emitByte(parser, offset & 0xff);
+}
+
 static void emitReturn(Parser *parser) { emitByte(parser, OP_RETURN); }
 
 static uint8_t makeConstant(Parser *parser, Value value) {
@@ -527,6 +540,21 @@ static void ifStatement(Parser *parser, Scanner *scanner, VM *vm, Compiler *comp
     patchJump(parser, elseJmp);
 }
 
+static void whileStatement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
+    size_t loopStart = currentChunk()->count;
+    consume(parser, scanner, TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+    expression(parser, scanner, vm, compiler);
+    consume(parser, scanner, TOKEN_RIGHT_PAREN, "Expect ')' after 'while' condition.");
+
+    size_t exitJmp = emitJump(parser, OP_JUMP_IF_FALSE);
+    emitByte(parser, OP_POP);
+    statement(parser, scanner, vm, compiler);
+    emitLoop(parser, loopStart);
+
+    patchJump(parser, exitJmp);
+    emitByte(parser, OP_POP);
+}
+
 static void synchronize(Parser *parser, Scanner *scanner) {
     parser->panicMode = false;
 
@@ -569,6 +597,8 @@ static void statement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compil
         printStatement(parser, scanner, vm, compiler);
     } else if (match(parser, scanner, TOKEN_IF)) {
         ifStatement(parser, scanner, vm, compiler);
+    } else if (match(parser, scanner, TOKEN_WHILE)) {
+        whileStatement(parser, scanner, vm, compiler);
     } else if (match(parser, scanner, TOKEN_LEFT_BRACE)) {
         beginScope(compiler);
         block(parser, scanner, vm, compiler);
