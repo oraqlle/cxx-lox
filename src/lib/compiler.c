@@ -1,5 +1,4 @@
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -278,6 +277,28 @@ static void literal(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler
     }
 }
 
+static void and_(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                 bool canAssign) {
+    size_t endJmp = emitJump(parser, OP_JUMP_IF_FALSE);
+
+    emitByte(parser, OP_POP);
+    parsePrecedence(parser, scanner, vm, compiler, PREC_AND);
+
+    patchJump(parser, endJmp);
+}
+
+static void or_(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                bool canAssign) {
+    size_t elseJmp = emitJump(parser, OP_JUMP_IF_FALSE);
+    size_t endJmp = emitJump(parser, OP_JUMP);
+
+    patchJump(parser, elseJmp);
+    emitByte(parser, OP_POP);
+
+    parsePrecedence(parser, scanner, vm, compiler, PREC_OR);
+    patchJump(parser, endJmp);
+}
+
 static void grouping(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
                      bool canAssign) {
     expression(parser, scanner, vm, compiler);
@@ -369,7 +390,7 @@ ParseRule rules[] = {
     [TOKEN_IDENTIFIER]    = {variable, NULL,   PREC_NONE},
     [TOKEN_STRING]        = {string,   NULL,   PREC_NONE},
     [TOKEN_NUMBER]        = {number,   NULL,   PREC_NONE},
-    [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_AND]           = {NULL,     and_,   PREC_AND},
     [TOKEN_CLASS]         = {NULL,     NULL,   PREC_NONE},
     [TOKEN_ELSE]          = {NULL,     NULL,   PREC_NONE},
     [TOKEN_FALSE]         = {literal,  NULL,   PREC_NONE},
@@ -377,7 +398,7 @@ ParseRule rules[] = {
     [TOKEN_FUN]           = {NULL,     NULL,   PREC_NONE},
     [TOKEN_IF]            = {NULL,     NULL,   PREC_NONE},
     [TOKEN_NIL]           = {literal,  NULL,   PREC_NONE},
-    [TOKEN_OR]            = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_OR]            = {NULL,     or_,    PREC_OR},
     [TOKEN_PRINT]         = {NULL,     NULL,   PREC_NONE},
     [TOKEN_RETURN]        = {NULL,     NULL,   PREC_NONE},
     [TOKEN_SUPER]         = {NULL,     NULL,   PREC_NONE},
