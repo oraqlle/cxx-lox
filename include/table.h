@@ -16,8 +16,8 @@ typedef struct {
  * @brief Hash table data structure
  */
 typedef struct {
-    size_t count;
-    size_t capacity;
+    uint32_t count;
+    uint32_t capacity;
     Entry *entries;
 } Table;
 

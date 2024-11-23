@@ -44,7 +44,7 @@ static Entry *findEntry(Entry *entries, size_t capacity, ObjString *key) {
     }
 }
 
-static void adjustCapacity(Table *table, size_t capacity) {
+static void adjustCapacity(Table *table, uint32_t capacity) {
     Entry *entries = ALLOCATE(Entry, capacity);
 
     for (size_t i = 0; i < capacity; i++) {
@@ -74,7 +74,7 @@ static void adjustCapacity(Table *table, size_t capacity) {
 
 bool tableSet(Table *table, ObjString *key, Value value) {
     if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
-        size_t capacity = GROW_CAPACITY(table->capacity);
+        uint32_t capacity = GROW_CAPACITY(table->capacity);
         adjustCapacity(table, capacity);
     }
 

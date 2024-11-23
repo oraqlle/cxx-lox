@@ -91,6 +91,14 @@ static void emitBytes(Parser *parser, uint8_t byte1, uint8_t byte2) {
     emitByte(parser, byte2);
 }
 
+static size_t emitJump(Parser *parser, uint8_t instruction) {
+    emitByte(parser, instruction);
+    emitByte(parser, 0xff);
+    emitByte(parser, 0xff);
+
+    return currentChunk()->count - 2;
+}
+
 static void emitReturn(Parser *parser) { emitByte(parser, OP_RETURN); }
 
 static uint8_t makeConstant(Parser *parser, Value value) {
@@ -106,6 +114,17 @@ static uint8_t makeConstant(Parser *parser, Value value) {
 
 static void emitConstant(Parser *parser, Value value) {
     emitBytes(parser, OP_CONSTANT, makeConstant(parser, value));
+}
+
+static void patchJump(Parser *parser, size_t offset) {
+    size_t jump = currentChunk()->count - offset - 2;
+
+    if (jump > UINT16_MAX) {
+        error(parser, "Too much code to jump over.");
+    }
+
+    currentChunk()->code[offset] = (jump >> 8) & 0xff;
+    currentChunk()->code[offset + 1] = jump & 0xff;
 }
 
 static void endCompiler(Parser *parser) {
@@ -466,6 +485,27 @@ static void printStatement(Parser *parser, Scanner *scanner, VM *vm, Compiler *c
     emitByte(parser, OP_PRINT);
 }
 
+static void ifStatement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
+    consume(parser, scanner, TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+    expression(parser, scanner, vm, compiler);
+    consume(parser, scanner, TOKEN_RIGHT_PAREN, "Expect ')' after 'if'.");
+
+    size_t thenJmp = emitJump(parser, OP_JUMP_IF_FALSE);
+    emitByte(parser, OP_POP);
+    statement(parser, scanner, vm, compiler);
+
+    size_t elseJmp = emitJump(parser, OP_JUMP);
+
+    patchJump(parser, thenJmp);
+    emitByte(parser, OP_POP);
+
+    if (match(parser, scanner, TOKEN_ELSE)) {
+        statement(parser, scanner, vm, compiler);
+    }
+
+    patchJump(parser, elseJmp);
+}
+
 static void synchronize(Parser *parser, Scanner *scanner) {
     parser->panicMode = false;
 
@@ -506,6 +546,8 @@ static void declaration(Parser *parser, Scanner *scanner, VM *vm, Compiler *comp
 static void statement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
     if (match(parser, scanner, TOKEN_PRINT)) {
         printStatement(parser, scanner, vm, compiler);
+    } else if (match(parser, scanner, TOKEN_IF)) {
+        ifStatement(parser, scanner, vm, compiler);
     } else if (match(parser, scanner, TOKEN_LEFT_BRACE)) {
         beginScope(compiler);
         block(parser, scanner, vm, compiler);
