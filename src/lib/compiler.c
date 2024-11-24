@@ -1,4 +1,6 @@
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -540,6 +542,52 @@ static void ifStatement(Parser *parser, Scanner *scanner, VM *vm, Compiler *comp
     patchJump(parser, elseJmp);
 }
 
+static void forStatement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
+    beginScope(compiler);
+
+    consume(parser, scanner, TOKEN_LEFT_PAREN, "Expect '('  after 'for'.");
+
+    if (match(parser, scanner, TOKEN_SEMICOLON)) {
+        // No initializer
+    } else if (match(parser, scanner, TOKEN_VAR)) {
+        varDeclaration(parser, scanner, vm, compiler);
+    } else {
+        expressionStatement(parser, scanner, vm, compiler);
+    }
+
+    size_t loopStart = currentChunk()->count;
+    intmax_t exitJmp = -1;
+
+    if (!match(parser, scanner, TOKEN_SEMICOLON)) {
+        expression(parser, scanner, vm, compiler);
+        consume(parser, scanner, TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+
+        exitJmp = (intmax_t)emitJump(parser, OP_JUMP_IF_FALSE);
+        emitByte(parser, OP_POP);
+    }
+
+    if (!match(parser, scanner, TOKEN_RIGHT_PAREN)) {
+        size_t bodyJmp = emitJump(parser, OP_JUMP);
+        size_t incStart = currentChunk()->count;
+        expression(parser, scanner, vm, compiler);
+        emitByte(parser, OP_POP);
+        consume(parser, scanner, TOKEN_RIGHT_PAREN, "Expect ')'  after for clauses.");
+
+        emitLoop(parser, loopStart);
+        loopStart = incStart;
+        patchJump(parser, bodyJmp);
+    }
+
+    statement(parser, scanner, vm, compiler);
+    emitLoop(parser, loopStart);
+
+    if (exitJmp != -1) {
+        patchJump(parser, (size_t)exitJmp);
+    }
+
+    endScope(parser, compiler);
+}
+
 static void whileStatement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
     size_t loopStart = currentChunk()->count;
     consume(parser, scanner, TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
@@ -595,6 +643,8 @@ static void declaration(Parser *parser, Scanner *scanner, VM *vm, Compiler *comp
 static void statement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
     if (match(parser, scanner, TOKEN_PRINT)) {
         printStatement(parser, scanner, vm, compiler);
+    } else if (match(parser, scanner, TOKEN_FOR)) {
+        forStatement(parser, scanner, vm, compiler);
     } else if (match(parser, scanner, TOKEN_IF)) {
         ifStatement(parser, scanner, vm, compiler);
     } else if (match(parser, scanner, TOKEN_WHILE)) {
