@@ -86,6 +86,6 @@ void initCompiler(Compiler *compiler, FunctionType ftype, VM *vm);
 /**
  * @brief Compiles string of Lox source into bytecode.
  */
-ObjFunction *compile(Scanner *scanner, const char *source, Chunk *chunk, VM *vm);
+ObjFunction *compile(Scanner *scanner, const char *source, VM *vm);
 
 #endif // clox_compiler_h

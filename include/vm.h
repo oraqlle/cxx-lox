@@ -9,24 +9,33 @@
 
 #include "chunk.h"
 #include "common.h"
+#include "object.h"
 #include "scanner.h"
 #include "table.h"
 #include "value.h"
 
-#define STACK_MAX 256
+#define FRAMES_MAX 64
+#define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
+
+typedef struct {
+    ObjFunction *func;
+    uint8_t *ip;
+    Value *slots;
+} CallFrame;
 
 /**
  * @brief VM structure.
  */
-typedef struct {
-    Chunk *chunk;
-    uint8_t *ip;
+struct VM {
+    CallFrame frames[FRAMES_MAX];
+    size_t frameCount;
+
     Value stack[STACK_MAX];
     Value *stackTop;
     Table globals;
     Table strings;
     Obj *objects;
-} VM;
+};
 
 /**
  * @brief Return codes for VM.

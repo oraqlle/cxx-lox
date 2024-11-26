@@ -682,13 +682,11 @@ void initCompiler(Compiler *compiler, FunctionType ftype, VM *vm) {
     local->name.length = 0;
 }
 
-ObjFunction *compile(Scanner *scanner, const char *source, Chunk *chunk, VM *vm) {
+ObjFunction *compile(Scanner *scanner, const char *source, VM *vm) {
     initScanner(scanner, source);
 
     Compiler compiler;
     initCompiler(&compiler, TYPE_SCRIPT, vm);
-
-    compilingChunk = chunk;
 
     Parser parser;
     parser.hadError = false;

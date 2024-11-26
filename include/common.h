@@ -13,6 +13,9 @@
 
 #define UINT8_COUNT (UINT8_MAX + 1)
 
+// Forward declare VM type
+typedef struct VM VM;
+
 #ifdef CLOX_DEVELOPER_MODE
 #undef DEBUG_TRACE_EXECUTION
 #define DEBUG_TRACE_EXECUTION
