@@ -1,9 +1,11 @@
 #ifndef clox_object_h
 #define clox_object_h
 
+#include "chunk.h"
 #include "common.h"
 #include "value.h"
 #include "vm.h"
+#include <stdint.h>
 
 /**
  * @brief Obtains the type tag of an object
@@ -11,9 +13,19 @@
 #define OBJ_TYPE(object) (AS_OBJ(object)->type)
 
 /**
- * @brief Checks if an object is a string
+ * @brief Checks if a value is a function object
+ */
+#define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
+
+/**
+ * @brief Checks if a value is a string
  */
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
+
+/**
+ * @brief Helper macro for casting value to function object
+ */
+#define AS_FUNCTION(value) ((ObjFunction *)AS_OBJ(value))
 
 /**
  * @brief Helper macros for extracting Lox strings and string data
@@ -25,6 +37,7 @@
  * @brief Type of heap object
  */
 typedef enum {
+    OBJ_FUNCTION,
     OBJ_STRING,
 } ObjType;
 
@@ -36,12 +49,30 @@ struct Obj {
     struct Obj *next;
 };
 
+/**
+ * @brief Function object type with it's own bytecode chunk
+ */
+typedef struct {
+    Obj obj;
+    uint8_t arity;
+    Chunk chunk;
+    ObjString *name;
+} ObjFunction;
+
+/**
+ * @brief Lox internal representation of strings
+ */
 struct ObjString {
     Obj obj;
     size_t length;
     char *chars;
     uint32_t hash;
 };
+
+/**
+ * @brief Constructs a function object
+ */
+ObjFunction *newFunction(VM *vm);
 
 /**
  * @brief Takes ownership of raw char data it is passed

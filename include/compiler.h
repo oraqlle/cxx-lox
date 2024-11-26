@@ -47,10 +47,18 @@ typedef struct {
     intmax_t depth;
 } Local;
 
+typedef enum {
+    TYPE_FUNCTION,
+    TYPE_SCRIPT,
+} FunctionType;
+
 /**
  * @brief Compilers representation of the VM stack
  */
 typedef struct {
+    ObjFunction *func;
+    FunctionType ftype;
+
     Local locals[UINT8_COUNT];
     intmax_t localCount;
     intmax_t scopeDepth;
@@ -73,11 +81,11 @@ typedef struct {
 /**
  * @brief Initializes compiler
  */
-void initCompiler(Compiler *compiler);
+void initCompiler(Compiler *compiler, FunctionType ftype, VM *vm);
 
 /**
  * @brief Compiles string of Lox source into bytecode.
  */
-bool compile(Scanner *scanner, const char *source, Chunk *chunk, VM *vm);
+ObjFunction *compile(Scanner *scanner, const char *source, Chunk *chunk, VM *vm);
 
 #endif // clox_compiler_h
