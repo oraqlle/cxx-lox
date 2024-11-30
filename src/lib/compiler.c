@@ -492,6 +492,10 @@ static uint8_t parseVariable(Parser *parser, Scanner *scanner, VM *vm, Compiler 
 }
 
 static void markInitialized(Compiler *compiler) {
+    if (compiler->scopeDepth == 0) {
+        return;
+    }
+
     compiler->locals[compiler->localCount - 1].depth = compiler->scopeDepth;
 }
 
@@ -502,6 +506,47 @@ static void defineVariable(Parser *parser, Compiler *compiler, uint8_t global) {
     }
 
     emitBytes(parser, OP_DEFINE_GLOBAL, global, compiler);
+}
+
+static void function(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                     FunctionType ftype) {
+    Compiler localCompiler;
+    initCompiler(&localCompiler, compiler, ftype, parser, vm);
+
+    beginScope(&localCompiler);
+
+    consume(parser, scanner, TOKEN_LEFT_PAREN, "Expect '(' after function name.");
+
+    if (!check(parser, TOKEN_RIGHT_PAREN)) {
+        do {
+            compiler->func->arity += 1;
+
+            if (!(compiler->func->arity < UINT8_MAX)) {
+                errorAtCurrent(parser, "Can't have more than 254 parameters.");
+            }
+
+            uint8_t constant =
+                parseVariable(parser, scanner, vm, compiler, "Expect parameter name.");
+            defineVariable(parser, compiler, constant);
+        } while (match(parser, scanner, TOKEN_COMMA));
+    }
+
+    consume(parser, scanner, TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+    consume(parser, scanner, TOKEN_LEFT_BRACE, "Expect '{' before function body.");
+
+    block(parser, scanner, vm, &localCompiler);
+
+    ObjFunction *func = endCompiler(parser, &localCompiler);
+    emitBytes(parser, OP_CONSTANT, makeConstant(parser, OBJ_VAL(func), compiler),
+              compiler);
+}
+
+static void funDeclaration(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
+    uint8_t global =
+        parseVariable(parser, scanner, vm, compiler, "Expect function name.");
+    markInitialized(compiler);
+    function(parser, scanner, vm, compiler, TYPE_FUNCTION);
+    defineVariable(parser, compiler, global);
 }
 
 static void varDeclaration(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
@@ -640,7 +685,9 @@ static void synchronize(Parser *parser, Scanner *scanner) {
 }
 
 static void declaration(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
-    if (match(parser, scanner, TOKEN_VAR)) {
+    if (match(parser, scanner, TOKEN_FUN)) {
+        funDeclaration(parser, scanner, vm, compiler);
+    } else if (match(parser, scanner, TOKEN_VAR)) {
         varDeclaration(parser, scanner, vm, compiler);
     } else {
         statement(parser, scanner, vm, compiler);
@@ -669,12 +716,20 @@ static void statement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compil
     }
 }
 
-void initCompiler(Compiler *compiler, FunctionType ftype, VM *vm) {
+void initCompiler(Compiler *compiler, Compiler *enclosing, FunctionType ftype,
+                  Parser *parser, VM *vm) {
+    compiler->enclosing = (struct Compiler *)enclosing;
+
     compiler->func = NULL;
     compiler->ftype = ftype;
     compiler->func = newFunction(vm);
     compiler->localCount = 0;
     compiler->scopeDepth = 0;
+
+    if (ftype != TYPE_SCRIPT) {
+        compiler->func->name =
+            copyString(parser->previous.length, parser->previous.start, vm);
+    }
 
     Local *local = &compiler->locals[compiler->localCount++];
     local->depth = 0;
@@ -685,12 +740,12 @@ void initCompiler(Compiler *compiler, FunctionType ftype, VM *vm) {
 ObjFunction *compile(Scanner *scanner, const char *source, VM *vm) {
     initScanner(scanner, source);
 
-    Compiler compiler;
-    initCompiler(&compiler, TYPE_SCRIPT, vm);
-
     Parser parser;
     parser.hadError = false;
     parser.panicMode = false;
+
+    Compiler compiler;
+    initCompiler(&compiler, NULL, TYPE_SCRIPT, &parser, vm);
 
     advance(&parser, scanner);
 

@@ -56,6 +56,8 @@ typedef enum {
  * @brief Compilers representation of the VM stack
  */
 typedef struct {
+    struct Compiler *enclosing;
+
     ObjFunction *func;
     FunctionType ftype;
 
@@ -70,7 +72,7 @@ typedef struct {
 typedef void (*ParseFn)(Parser *, Scanner *, VM *, Compiler *, bool);
 
 /**
- * @brief Parsing rule.
+ * @brief Parsing rule.student team member
  */
 typedef struct {
     ParseFn prefix;
@@ -81,7 +83,8 @@ typedef struct {
 /**
  * @brief Initializes compiler
  */
-void initCompiler(Compiler *compiler, FunctionType ftype, VM *vm);
+void initCompiler(Compiler *compiler, Compiler *enclosing, FunctionType ftype,
+                  Parser *parser, VM *vm);
 
 /**
  * @brief Compiles string of Lox source into bytecode.
