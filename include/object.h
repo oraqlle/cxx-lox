@@ -16,6 +16,11 @@
 #define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
 
 /**
+ * brief Checks if value is a native OS function
+ */
+#define IS_NATIVE(value) isObjType(value, OBJ_NATIVE)
+
+/**
  * @brief Checks if a value is a string
  */
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
@@ -24,6 +29,11 @@
  * @brief Helper macro for casting value to function object
  */
 #define AS_FUNCTION(value) ((ObjFunction *)AS_OBJ(value))
+
+/**
+ * brief Helper macro for casting value to native function object
+ */
+#define AS_NATIVE(value) (((ObjNative *)AS_OBJ(value))->func)
 
 /**
  * @brief Helper macros for extracting Lox strings and string data
@@ -36,6 +46,7 @@
  */
 typedef enum {
     OBJ_FUNCTION,
+    OBJ_NATIVE,
     OBJ_STRING,
 } ObjType;
 
@@ -58,6 +69,19 @@ typedef struct {
 } ObjFunction;
 
 /**
+ * @brief Type of native/OS functions hoisted from C into Lox
+ */
+typedef Value (*NativeFn)(size_t argCount, Value *arg);
+
+/**
+ * @brief Native function object
+ */
+typedef struct {
+    Obj obj;
+    NativeFn func;
+} ObjNative;
+
+/**
  * @brief Lox internal representation of strings
  */
 struct ObjString {
@@ -71,6 +95,11 @@ struct ObjString {
  * @brief Constructs a function object
  */
 ObjFunction *newFunction(VM *vm);
+
+/**
+ * @brief Constructs new native/OS function object
+ */
+ObjNative *newNative(NativeFn func, VM *vm);
 
 /**
  * @brief Takes ownership of raw char data it is passed

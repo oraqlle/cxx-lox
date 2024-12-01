@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <wchar.h>
 
 #include "chunk.h"
 #include "common.h"
@@ -43,6 +45,14 @@ static void runtimeError(VM *vm, const char *format, ...) {
     resetStack(vm);
 }
 
+static void defineNative(VM *vm, const char *name, NativeFn func) {
+    push(vm, OBJ_VAL(copyString(strlen(name), name, vm)));
+    push(vm, OBJ_VAL(newNative(func, vm)));
+    tableSet(&vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
+    pop(vm);
+    pop(vm);
+}
+
 static Value peek(VM *vm, int distance) { return vm->stackTop[-1 - distance]; }
 
 static bool call(VM *vm, ObjFunction *func, uint8_t argCount) {
@@ -68,6 +78,13 @@ static bool callValue(VM *vm, Value callee, uint8_t argCount) {
         switch (OBJ_TYPE(callee)) {
             case OBJ_FUNCTION:
                 return call(vm, AS_FUNCTION(callee), argCount);
+            case OBJ_NATIVE: {
+                NativeFn native = AS_NATIVE(callee);
+                Value result = native(argCount, vm->stackTop - argCount);
+                vm->stackTop -= argCount + 1;
+                push(vm, result);
+                return true;
+            }
             default:
                 break; // Non-callable object type
         }
@@ -95,12 +112,18 @@ static void concatenate(VM *vm) {
     push(vm, OBJ_VAL(string));
 }
 
+static Value clockNative(size_t argCount, Value *args) {
+    return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+}
+
 void initVM(VM *vm) {
     resetStack(vm);
     vm->objects = NULL;
 
     initTable(&vm->globals);
     initTable(&vm->strings);
+
+    defineNative(vm, "clock", clockNative);
 }
 
 void freeVM(VM *vm) {
@@ -316,12 +339,6 @@ InterpreterResult interpret(VM *vm, Scanner *scanner, const char *source) {
     }
 
     push(vm, OBJ_VAL(func));
-
-    CallFrame *frame = &vm->frames[vm->frameCount++];
-    frame->func = func;
-    frame->ip = func->chunk.code;
-    frame->slots = vm->stack;
-
     call(vm, func, 0);
 
     return run(vm);
