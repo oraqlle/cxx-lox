@@ -51,8 +51,9 @@ ObjFunction *newFunction(VM *vm) {
     return func;
 }
 
-ObjNative *newNative(NativeFn func, VM *vm) {
+ObjNative *newNative(NativeFn func, uint8_t arity, VM *vm) {
     ObjNative *native = ALLOCATE_OBJ(ObjNative, vm, OBJ_NATIVE);
+    native->arity = arity;
     native->func = func;
     return native;
 }

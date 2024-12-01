@@ -4,6 +4,7 @@
 #include "chunk.h"
 #include "common.h"
 #include "value.h"
+#include <stdint.h>
 
 /**
  * @brief Obtains the type tag of an object
@@ -33,6 +34,7 @@
 /**
  * brief Helper macro for casting value to native function object
  */
+#define AS_NATIVE_OBJ(value) ((ObjNative *)AS_OBJ(value))
 #define AS_NATIVE(value) (((ObjNative *)AS_OBJ(value))->func)
 
 /**
@@ -78,6 +80,7 @@ typedef Value (*NativeFn)(size_t argCount, Value *arg);
  */
 typedef struct {
     Obj obj;
+    uint8_t arity;
     NativeFn func;
 } ObjNative;
 
@@ -99,7 +102,7 @@ ObjFunction *newFunction(VM *vm);
 /**
  * @brief Constructs new native/OS function object
  */
-ObjNative *newNative(NativeFn func, VM *vm);
+ObjNative *newNative(NativeFn func, uint8_t arity, VM *vm);
 
 /**
  * @brief Takes ownership of raw char data it is passed

@@ -45,9 +45,15 @@ static void runtimeError(VM *vm, const char *format, ...) {
     resetStack(vm);
 }
 
-static void defineNative(VM *vm, const char *name, NativeFn func) {
+static void defineNative(VM *vm, const char *name, NativeFn func, uint8_t arity) {
+
+    if (arity == UINT8_MAX) {
+        fprintf(stderr, "Can't have more than 255 parameters in native function %s.\n",
+                name);
+    }
+
     push(vm, OBJ_VAL(copyString(strlen(name), name, vm)));
-    push(vm, OBJ_VAL(newNative(func, vm)));
+    push(vm, OBJ_VAL(newNative(func, arity, vm)));
     tableSet(&vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
     pop(vm);
     pop(vm);
@@ -79,8 +85,15 @@ static bool callValue(VM *vm, Value callee, uint8_t argCount) {
             case OBJ_FUNCTION:
                 return call(vm, AS_FUNCTION(callee), argCount);
             case OBJ_NATIVE: {
-                NativeFn native = AS_NATIVE(callee);
-                Value result = native(argCount, vm->stackTop - argCount);
+                ObjNative *native = AS_NATIVE_OBJ(callee);
+
+                if (argCount != native->arity) {
+                    runtimeError(vm, "Expected %d arguments but got %d.", native->arity,
+                                 argCount);
+                    return false;
+                }
+
+                Value result = native->func(argCount, vm->stackTop - argCount);
                 vm->stackTop -= argCount + 1;
                 push(vm, result);
                 return true;
@@ -123,7 +136,7 @@ void initVM(VM *vm) {
     initTable(&vm->globals);
     initTable(&vm->strings);
 
-    defineNative(vm, "clock", clockNative);
+    defineNative(vm, "clock", clockNative, 0);
 }
 
 void freeVM(VM *vm) {
