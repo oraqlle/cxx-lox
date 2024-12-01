@@ -25,14 +25,57 @@ static void runtimeError(VM *vm, const char *format, ...) {
     va_end(args);
     fputs("\n", stderr);
 
-    CallFrame *frame = &vm->frames[vm->frameCount - 1];
-    size_t instruction = (size_t)(frame->ip - frame->func->chunk.code - 1);
-    size_t line = frame->func->chunk.lines[instruction];
-    fprintf(stderr, "[line %zu] in script\n", line);
+    for (intmax_t i = (intmax_t)(vm->frameCount - 1); i >= 0; i--) {
+        CallFrame *frame = &vm->frames[i];
+        ObjFunction *func = frame->func;
+        size_t instruction = (size_t)(frame->ip - func->chunk.code - 1);
+        size_t line = func->chunk.lines[instruction];
+
+        fprintf(stderr, "[line %zu] in ", line);
+
+        if (func->name == NULL) {
+            fprintf(stderr, "script\n");
+        } else {
+            fprintf(stderr, "%s()\n", func->name->chars);
+        }
+    }
+
     resetStack(vm);
 }
 
 static Value peek(VM *vm, int distance) { return vm->stackTop[-1 - distance]; }
+
+static bool call(VM *vm, ObjFunction *func, uint8_t argCount) {
+    if (argCount != func->arity) {
+        runtimeError(vm, "Expected %d arguments but got %d.", func->arity, argCount);
+        return false;
+    }
+
+    if (vm->frameCount == FRAMES_MAX) {
+        runtimeError(vm, "Stack overflow");
+    }
+
+    CallFrame *frame = &vm->frames[vm->frameCount++];
+    frame->func = func;
+    frame->ip = func->chunk.code;
+    frame->slots = vm->stackTop - argCount - 1;
+
+    return true;
+}
+
+static bool callValue(VM *vm, Value callee, uint8_t argCount) {
+    if (IS_OBJ(callee)) {
+        switch (OBJ_TYPE(callee)) {
+            case OBJ_FUNCTION:
+                return call(vm, AS_FUNCTION(callee), argCount);
+            default:
+                break; // Non-callable object type
+        }
+    }
+
+    runtimeError(vm, "Can only call functions and classes.");
+    return false;
+}
 
 static bool isFalsey(Value value) {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
@@ -230,9 +273,31 @@ static InterpreterResult run(VM *vm) {
                 frame->ip -= offset;
                 break;
             }
+            case OP_CALL: {
+                uint8_t argCount = READ_BYTE();
+
+                if (!callValue(vm, peek(vm, argCount), argCount)) {
+                    return INTERPRETER_RUNTIME_ERR;
+                }
+
+                frame = &vm->frames[vm->frameCount - 1];
+                break;
+            }
             case OP_RETURN: {
-                // Exit interpreter
-                return INTERPRETER_OK;
+                Value result = pop(vm);
+                vm->frameCount -= 1;
+
+                if (vm->frameCount == 0) {
+                    pop(vm);
+
+                    // Exit interpreter
+                    return INTERPRETER_OK;
+                }
+
+                vm->stackTop = frame->slots;
+                push(vm, result);
+                frame = &vm->frames[vm->frameCount - 1];
+                break;
             }
         }
     }
@@ -256,6 +321,8 @@ InterpreterResult interpret(VM *vm, Scanner *scanner, const char *source) {
     frame->func = func;
     frame->ip = func->chunk.code;
     frame->slots = vm->stack;
+
+    call(vm, func, 0);
 
     return run(vm);
 }

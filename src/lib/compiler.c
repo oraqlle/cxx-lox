@@ -114,6 +114,7 @@ static void emitLoop(Parser *parser, size_t loopStart, Compiler *compiler) {
 }
 
 static void emitReturn(Parser *parser, Compiler *compiler) {
+    emitByte(parser, OP_NIL, compiler);
     emitByte(parser, OP_RETURN, compiler);
 }
 
@@ -284,6 +285,32 @@ static void binary(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
     }
 }
 
+static uint8_t argumentList(Parser *parser, Scanner *scanner, VM *vm,
+                            Compiler *compiler) {
+    uint8_t argCount = 0;
+
+    if (!check(parser, TOKEN_RIGHT_PAREN)) {
+        do {
+            expression(parser, scanner, vm, compiler);
+
+            if (argCount) {
+                error(parser, "Can't have more  than 254 arguments.");
+            }
+
+            argCount += 1;
+        } while (match(parser, scanner, TOKEN_COMMA));
+    }
+
+    consume(parser, scanner, TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
+    return argCount;
+}
+
+static void call(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                 bool canAssign) {
+    uint8_t argCount = argumentList(parser, scanner, vm, compiler);
+    emitBytes(parser, OP_CALL, argCount, compiler);
+}
+
 static void literal(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
                     bool canAssign) {
     switch (parser->previous.type) {
@@ -394,7 +421,7 @@ static void unary(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
 // clang-format off
 
 ParseRule rules[] = {
-    [TOKEN_LEFT_PAREN]    = {grouping, NULL,   PREC_NONE},
+    [TOKEN_LEFT_PAREN]    = {grouping, call,   PREC_CALL},
     [TOKEN_RIGHT_PAREN]   = {NULL,     NULL,   PREC_NONE},
     [TOKEN_LEFT_BRACE]    = {NULL,     NULL,   PREC_NONE}, 
     [TOKEN_RIGHT_BRACE]   = {NULL,     NULL,   PREC_NONE},
@@ -519,15 +546,15 @@ static void function(Parser *parser, Scanner *scanner, VM *vm, Compiler *compile
 
     if (!check(parser, TOKEN_RIGHT_PAREN)) {
         do {
-            compiler->func->arity += 1;
+            localCompiler.func->arity += 1;
 
-            if (!(compiler->func->arity < UINT8_MAX)) {
+            if (!(localCompiler.func->arity < UINT8_MAX)) {
                 errorAtCurrent(parser, "Can't have more than 254 parameters.");
             }
 
-            uint8_t constant =
-                parseVariable(parser, scanner, vm, compiler, "Expect parameter name.");
-            defineVariable(parser, compiler, constant);
+            uint8_t constant = parseVariable(parser, scanner, vm, &localCompiler,
+                                             "Expect parameter name.");
+            defineVariable(parser, &localCompiler, constant);
         } while (match(parser, scanner, TOKEN_COMMA));
     }
 
@@ -575,6 +602,21 @@ static void printStatement(Parser *parser, Scanner *scanner, VM *vm, Compiler *c
     expression(parser, scanner, vm, compiler);
     consume(parser, scanner, TOKEN_SEMICOLON, "Expect ';' after value.");
     emitByte(parser, OP_PRINT, compiler);
+}
+
+static void returnStatement(Parser *parser, Scanner *scanner, VM *vm,
+                            Compiler *compiler) {
+    if (compiler->ftype == TYPE_SCRIPT) {
+        error(parser, "Can't return from top-level code.");
+    }
+
+    if (match(parser, scanner, TOKEN_SEMICOLON)) {
+        emitReturn(parser, compiler);
+    } else {
+        expression(parser, scanner, vm, compiler);
+        consume(parser, scanner, TOKEN_SEMICOLON, "Expect ';' after return value.");
+        emitByte(parser, OP_RETURN, compiler);
+    }
 }
 
 static void ifStatement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
@@ -705,6 +747,8 @@ static void statement(Parser *parser, Scanner *scanner, VM *vm, Compiler *compil
         forStatement(parser, scanner, vm, compiler);
     } else if (match(parser, scanner, TOKEN_IF)) {
         ifStatement(parser, scanner, vm, compiler);
+    } else if (match(parser, scanner, TOKEN_RETURN)) {
+        returnStatement(parser, scanner, vm, compiler);
     } else if (match(parser, scanner, TOKEN_WHILE)) {
         whileStatement(parser, scanner, vm, compiler);
     } else if (match(parser, scanner, TOKEN_LEFT_BRACE)) {
