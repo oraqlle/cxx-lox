@@ -12,7 +12,12 @@
 #define OBJ_TYPE(object) (AS_OBJ(object)->type)
 
 /**
- * @brief Checks if a value is a function object
+ * @brief Checks if value is a closure object
+ */
+#define IS_CLOSURE(value) isObjType(value, OBJ_CLOSURE)
+
+/**
+ * @brief Checks if value is a function object
  */
 #define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
 
@@ -22,9 +27,14 @@
 #define IS_NATIVE(value) isObjType(value, OBJ_NATIVE)
 
 /**
- * @brief Checks if a value is a string
+ * @brief Checks if value is a string
  */
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
+
+/**
+ * @brief Helper macro for casting value to a closure object
+ */
+#define AS_CLOSURE(value) ((ObjClosure*)AS_OBJ(value))
 
 /**
  * @brief Helper macro for casting value to function object
@@ -47,6 +57,7 @@
  * @brief Type of heap object
  */
 typedef enum {
+    OBJ_CLOSURE,
     OBJ_FUNCTION,
     OBJ_NATIVE,
     OBJ_STRING,
@@ -95,9 +106,22 @@ struct ObjString {
 };
 
 /**
+ * @brief Lox internal representation of closures
+ */
+typedef struct {
+    Obj obj;
+    ObjFunction *func;
+} ObjClosure;
+
+/**
  * @brief Constructs a function object
  */
 ObjFunction *newFunction(VM *vm);
+
+/**
+ * @brief Constructs a closure object
+ */
+ObjClosure *newClosure(VM *vm, ObjFunction *func);
 
 /**
  * @brief Constructs new native/OS function object

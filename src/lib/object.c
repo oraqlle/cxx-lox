@@ -51,6 +51,12 @@ ObjFunction *newFunction(VM *vm) {
     return func;
 }
 
+ObjClosure *newClosure(VM *vm, ObjFunction *func) {
+    ObjClosure *closure = ALLOCATE_OBJ(ObjClosure, vm, OBJ_CLOSURE);
+    closure->func = func;
+    return closure;
+}
+
 ObjNative *newNative(NativeFn func, uint8_t arity, VM *vm) {
     ObjNative *native = ALLOCATE_OBJ(ObjNative, vm, OBJ_NATIVE);
     native->arity = arity;
@@ -97,6 +103,9 @@ static void printFunction(ObjFunction *func) {
 
 void printObject(Value value) {
     switch (OBJ_TYPE(value)) {
+        case OBJ_CLOSURE:
+            printFunction(AS_CLOSURE(value)->func);
+            break;
         case OBJ_FUNCTION:
             printFunction(AS_FUNCTION(value));
             break;
