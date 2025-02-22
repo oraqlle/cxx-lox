@@ -564,7 +564,7 @@ static void function(Parser *parser, Scanner *scanner, VM *vm, Compiler *compile
     block(parser, scanner, vm, &localCompiler);
 
     ObjFunction *func = endCompiler(parser, &localCompiler);
-    emitBytes(parser, OP_CONSTANT, makeConstant(parser, OBJ_VAL(func), compiler),
+    emitBytes(parser, OP_CLOSURE, makeConstant(parser, OBJ_VAL(func), compiler),
               compiler);
 }
 

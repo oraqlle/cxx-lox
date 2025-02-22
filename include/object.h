@@ -34,7 +34,7 @@
 /**
  * @brief Helper macro for casting value to a closure object
  */
-#define AS_CLOSURE(value) ((ObjClosure*)AS_OBJ(value))
+#define AS_CLOSURE(value) ((ObjClosure *)AS_OBJ(value))
 
 /**
  * @brief Helper macro for casting value to function object
