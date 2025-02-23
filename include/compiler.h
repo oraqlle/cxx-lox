@@ -11,6 +11,7 @@
 #include "common.h"
 #include "object.h"
 #include "scanner.h"
+#include <stdint.h>
 
 /**
  * @brief Parser type.
@@ -47,6 +48,14 @@ typedef struct {
     intmax_t depth;
 } Local;
 
+/**
+ * @brief Represents variables closed over by closures
+ */
+typedef struct {
+    uint8_t index;
+    bool isLocal;
+} Upvalue;
+
 typedef enum {
     TYPE_FUNCTION,
     TYPE_SCRIPT,
@@ -63,6 +72,7 @@ typedef struct {
 
     Local locals[UINT8_COUNT];
     intmax_t localCount;
+    Upvalue upvalues[UINT8_COUNT];
     intmax_t scopeDepth;
 } Compiler;
 

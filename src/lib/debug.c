@@ -3,6 +3,7 @@
 
 #include "chunk.h"
 #include "debug.h"
+#include "object.h"
 #include "value.h"
 
 void disassembleChunk(Chunk *chunk, const char *name) {
@@ -39,7 +40,8 @@ static size_t jumpInstruction(const char *name, int8_t sign, Chunk *chunk,
                               size_t offset) {
     uint16_t jmp = (uint16_t)(chunk->code[offset + 1] << 8);
     jmp |= chunk->code[offset + 2];
-    printf("%-16s %4zu -> %zu\n", name, offset, offset + 3 + (sign * jmp));
+    printf("%-16s %4zu -> %ld\n", name, offset,
+           ((intmax_t)offset) + 3 + (sign * (intmax_t)jmp));
     return offset + 3;
 }
 
@@ -75,6 +77,10 @@ size_t disassembleInstruction(Chunk *chunk, size_t offset) {
             return byteInstruction("OP_SET_LOCAL", chunk, offset);
         case OP_SET_GLOBAL:
             return constantInstruction("OP_SET_GLOBAL", chunk, offset);
+        case OP_GET_UPVALUE:
+            return byteInstruction("OP_GET_UPVALUE", chunk, offset);
+        case OP_SET_UPVALUE:
+            return byteInstruction("OP_SET_UPVALUE", chunk, offset);
         case OP_EQUAL:
             return simpleInstruction("OP_EQUAL", offset);
         case OP_GREATER:
@@ -109,6 +115,17 @@ size_t disassembleInstruction(Chunk *chunk, size_t offset) {
             printf("%-16s %4d ", "OP_CLOSURE", constant);
             printValue(chunk->constants.values[constant]);
             printf("\n");
+
+            ObjFunction *func = AS_FUNCTION(chunk->constants.values[constant]);
+
+            for (size_t idx = 0; idx < func->upvalueCount; idx++) {
+                uint8_t isLocal = chunk->code[offset++];
+                size_t index = chunk->code[offset++];
+
+                printf("%04zu      |                     %s %zu\n", offset - 2,
+                       isLocal ? "local" : "upvalue", index);
+            }
+
             return offset;
         }
         case OP_RETURN:

@@ -45,6 +45,7 @@ ObjFunction *newFunction(VM *vm) {
     ObjFunction *func = ALLOCATE_OBJ(ObjFunction, vm, OBJ_FUNCTION);
 
     func->arity = 0;
+    func->upvalueCount = 0;
     func->name = NULL;
     initChunk(&func->chunk);
 
@@ -92,6 +93,12 @@ ObjString *copyString(size_t length, const char *chars, VM *vm) {
     return allocateString(length, heapChars, hash, vm);
 }
 
+ObjUpvalue *newUpvalue(Value *slot, VM *vm) {
+    ObjUpvalue *upvalue = ALLOCATE_OBJ(ObjUpvalue, vm, OBJ_UPVALUE);
+    upvalue->location = slot;
+    return upvalue;
+}
+
 static void printFunction(ObjFunction *func) {
     if (func->name == NULL) {
         printf("<script>");
@@ -114,6 +121,9 @@ void printObject(Value value) {
             break;
         case OBJ_STRING:
             printf("%s", AS_CSTRING(value));
+            break;
+        case OBJ_UPVALUE:
+            printf("upvalue");
             break;
     }
 }

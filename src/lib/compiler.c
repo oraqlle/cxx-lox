@@ -210,6 +210,47 @@ static intmax_t resolveLocal(Parser *parser, Compiler *compiler, Token *name) {
     return -1;
 }
 
+static intmax_t addUpvalue(Compiler *compiler, Parser *parser, uint8_t index,
+                           bool isLocal) {
+    intmax_t upvalueCount = (intmax_t)compiler->func->upvalueCount;
+
+    for (intmax_t idx = 0; idx < upvalueCount; idx++) {
+        Upvalue *upvalue = &compiler->upvalues[idx];
+        if (upvalue->index == index && upvalue->isLocal == isLocal) {
+            return idx;
+        }
+    }
+
+    if (upvalueCount == UINT8_COUNT) {
+        error(parser, "Too many closure variables in function.");
+        return 0;
+    }
+
+    compiler->upvalues[upvalueCount].isLocal = isLocal;
+    compiler->upvalues[upvalueCount].index = index = isLocal;
+    return (intmax_t)compiler->func->upvalueCount++;
+}
+
+static intmax_t resolveUpvalue(Compiler *compiler, Parser *parser, Token *name) {
+    if (compiler->enclosing == NULL) {
+        return -1;
+    }
+
+    intmax_t local = resolveLocal(parser, compiler, name);
+
+    if (local != -1) {
+        return addUpvalue(compiler, parser, (uint8_t)local, true);
+    }
+
+    intmax_t upvalue = resolveUpvalue((Compiler *)compiler->enclosing, parser, name);
+
+    if (upvalue != -1) {
+        return addUpvalue(compiler, parser, (uint8_t)upvalue, false);
+    }
+
+    return -1;
+}
+
 static void addLocal(Parser *parser, Compiler *compiler, Token name) {
     if (compiler->localCount == UINT8_COUNT) {
         error(parser, "Too many local variables in function.");
@@ -379,6 +420,9 @@ static void namedVariable(Parser *parser, Scanner *scanner, VM *vm, Compiler *co
     if (arg != -1) {
         getOp = OP_GET_LOCAL;
         setOp = OP_SET_LOCAL;
+    } else if ((arg = resolveUpvalue(compiler, parser, &name)) != -1) {
+        getOp = OP_GET_UPVALUE;
+        setOp = OP_SET_UPVALUE;
     } else {
         arg = identifierConstant(parser, vm, &name, compiler);
         getOp = OP_GET_GLOBAL;
@@ -566,6 +610,11 @@ static void function(Parser *parser, Scanner *scanner, VM *vm, Compiler *compile
     ObjFunction *func = endCompiler(parser, &localCompiler);
     emitBytes(parser, OP_CLOSURE, makeConstant(parser, OBJ_VAL(func), compiler),
               compiler);
+
+    for (size_t idx = 0; idx < func->upvalueCount; idx++) {
+        emitByte(parser, compiler->upvalues[idx].isLocal ? 1 : 0, compiler);
+        emitByte(parser, compiler->upvalues[idx].index, compiler);
+    }
 }
 
 static void funDeclaration(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {

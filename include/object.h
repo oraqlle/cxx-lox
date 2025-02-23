@@ -61,6 +61,7 @@ typedef enum {
     OBJ_FUNCTION,
     OBJ_NATIVE,
     OBJ_STRING,
+    OBJ_UPVALUE,
 } ObjType;
 
 /**
@@ -77,6 +78,7 @@ struct Obj {
 typedef struct {
     Obj obj;
     uint8_t arity;
+    size_t upvalueCount;
     Chunk chunk;
     ObjString *name;
 } ObjFunction;
@@ -104,6 +106,15 @@ struct ObjString {
     char *chars;
     uint32_t hash;
 };
+
+/**
+ * @brief Lox internal representation of Upvalues using the Object System
+ * such that values are hooked into the GC.
+ */
+typedef struct {
+    Obj obj;
+    Value *location;
+} ObjUpvalue;
 
 /**
  * @brief Lox internal representation of closures
@@ -137,6 +148,11 @@ ObjString *takeString(size_t length, char *chars, VM *vm);
  * @brief Copies a string literal from scanned texted into string object
  */
 ObjString *copyString(size_t length, const char *chars, VM *vm);
+
+/**
+ * @brief Constructs an Upvalue from a variable
+ */
+ObjUpvalue *newUpvalue(Value *slot, VM *vm);
 
 /**
  * @brief Helper function for displaying objects.
