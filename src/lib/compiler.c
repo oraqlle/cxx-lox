@@ -166,8 +166,13 @@ static void endScope(Parser *parser, Compiler *compiler) {
 
     while (compiler->localCount > 0 &&
            compiler->locals[compiler->localCount - 1].depth > compiler->scopeDepth) {
-        //! Could create OP_POPN opcode to pop multiple values off the stack at once.
-        emitByte(parser, OP_POP, compiler);
+        if (compiler->locals[compiler->localCount - 1].isCaptured) {
+            emitByte(parser, OP_CLOSE_UPVALUE, compiler);
+        } else {
+            //! Could create OP_POPN opcode to pop multiple values off the stack at once.
+            emitByte(parser, OP_POP, compiler);
+        }
+
         compiler->localCount -= 1;
     }
 }
@@ -239,6 +244,7 @@ static intmax_t resolveUpvalue(Compiler *compiler, Parser *parser, Token *name) 
     intmax_t local = resolveLocal(parser, compiler, name);
 
     if (local != -1) {
+        ((Compiler *)compiler->enclosing)->locals[local].isCaptured = true;
         return addUpvalue(compiler, parser, (uint8_t)local, true);
     }
 
@@ -260,6 +266,7 @@ static void addLocal(Parser *parser, Compiler *compiler, Token name) {
     Local *local = &compiler->locals[compiler->localCount++];
     local->name = name;
     local->depth = -1;
+    local->isCaptured = false;
 }
 
 static void declareVariable(Parser *parser, Compiler *compiler) {
@@ -826,6 +833,7 @@ void initCompiler(Compiler *compiler, Compiler *enclosing, FunctionType ftype,
 
     Local *local = &compiler->locals[compiler->localCount++];
     local->depth = 0;
+    local->isCaptured = false;
     local->name.start = "";
     local->name.length = 0;
 }

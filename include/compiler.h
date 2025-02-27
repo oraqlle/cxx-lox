@@ -46,6 +46,7 @@ typedef enum {
 typedef struct {
     Token name;
     intmax_t depth;
+    bool isCaptured;
 } Local;
 
 /**

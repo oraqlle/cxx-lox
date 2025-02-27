@@ -53,8 +53,17 @@ ObjFunction *newFunction(VM *vm) {
 }
 
 ObjClosure *newClosure(VM *vm, ObjFunction *func) {
+    ObjUpvalue **upvalues = ALLOCATE(ObjUpvalue*, func->upvalueCount);
+
+    for (size_t idx = 0; idx < func->upvalueCount; idx++) {
+        upvalues[idx] = NULL;
+    }
+
     ObjClosure *closure = ALLOCATE_OBJ(ObjClosure, vm, OBJ_CLOSURE);
     closure->func = func;
+    closure->upvalues = upvalues;
+    closure->upvalueCount = func->upvalueCount;
+
     return closure;
 }
 
@@ -96,6 +105,8 @@ ObjString *copyString(size_t length, const char *chars, VM *vm) {
 ObjUpvalue *newUpvalue(Value *slot, VM *vm) {
     ObjUpvalue *upvalue = ALLOCATE_OBJ(ObjUpvalue, vm, OBJ_UPVALUE);
     upvalue->location = slot;
+    upvalue->closed = NIL_VAL;
+    upvalue->next = NULL;
     return upvalue;
 }
 

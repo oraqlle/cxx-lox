@@ -114,6 +114,8 @@ struct ObjString {
 typedef struct {
     Obj obj;
     Value *location;
+    Value closed;
+    struct ObjUpvalue *next;
 } ObjUpvalue;
 
 /**
@@ -122,6 +124,8 @@ typedef struct {
 typedef struct {
     Obj obj;
     ObjFunction *func;
+    ObjUpvalue **upvalues;
+    size_t upvalueCount;
 } ObjClosure;
 
 /**
