@@ -63,6 +63,6 @@ ObjString *tableFindString(Table *table, const char *chars, size_t length, uint3
 /**
  * @brief Marks globals in the VMs hash table to not be swept by GC
  */
-void markTable(Table *table);
+void markTable(VM *vm, Table *table);
 
 #endif // clox_table_h

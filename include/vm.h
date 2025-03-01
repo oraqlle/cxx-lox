@@ -32,10 +32,16 @@ struct VM {
 
     Value stack[STACK_MAX];
     Value *stackTop;
+
     Table globals;
     Table strings;
+
     ObjUpvalue *openUpvalues;
     Obj *objects;
+
+    size_t greyCount;
+    size_t greyCapacity;
+    Obj **greyStack;
 };
 
 /**

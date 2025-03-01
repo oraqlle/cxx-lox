@@ -156,10 +156,10 @@ ObjString *tableFindString(Table *table, const char *chars, size_t length,
     }
 }
 
-void markTable(Table *table) {
+void markTable(VM *vm, Table *table) {
     for (size_t idx = 0; idx < table->capacity; idx++) {
         Entry *entry = &table->entries[idx];
-        markObject((Obj *)entry->key);
-        markValue(entry->value);
+        markObject(vm, (Obj *)entry->key);
+        markValue(vm, entry->value);
     }
 }

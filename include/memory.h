@@ -53,12 +53,12 @@ void *reallocate(VM *vm, Compiler *compiler, void *pointer, size_t oldSize,
 /**
  * @brief Marks a Lox Obj to not be swept by GC
  */
-void markObject(Obj *object);
+void markObject(VM *vm, Obj *object);
 
 /**
  * @brief Marks a Value to not be swept by GC
  */
-void markValue(Value value);
+void markValue(VM *vm, Value value);
 
 /**
  * @brief Cleans up unused memory using mark-sweep GC
