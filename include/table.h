@@ -29,19 +29,19 @@ void initTable(Table *table);
 /**
  * @brief Destroys hash table
  */
-void freeTable(Table *table);
+void freeTable(VM *vm, Compiler *compiler, Table *table);
 
 /**
  * @brief Inserts or sets key entry with value.
  *
  * @returns true when entry is inserted and fails when updated
  */
-bool tableSet(Table *table, ObjString *key, Value value);
+bool tableSet(VM *vm, Compiler *compiler, Table *table, ObjString *key, Value value);
 
 /**
  * @brief Copies all entries from one hash table to another.
  */
-void tableAddAll(Table *from, Table *to);
+void tableAddAll(VM *vm, Compiler *compiler, Table *from, Table *to);
 
 /**
  * @brief Extract pointer to entry i hash table

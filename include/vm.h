@@ -55,7 +55,7 @@ void initVM(VM *vm);
 /**
  * @brief Cleans up VM instance.
  */
-void freeVM(VM *vm);
+void freeVM(VM *vm, Compiler *compiler);
 
 /**
  * @brief Interprets a chunk of bytecode.

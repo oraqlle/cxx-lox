@@ -64,16 +64,16 @@ void initChunk(Chunk *chunk);
 /**
  * @brief Append new opcode byte to chunk.
  */
-void writeChunk(Chunk *chunk, uint8_t byte, size_t line);
+void writeChunk(VM *vm, Compiler *compiler, Chunk *chunk, uint8_t byte, size_t line);
 
 /**
  * @brief Adds constant to bytecode chunk's value pool.
  */
-uint8_t addConstant(Chunk *chunk, Value value);
+uint8_t addConstant(VM *vm, Compiler *compiler, Chunk *chunk, Value value);
 
 /**
  * @brief Frees chunk.
  */
-void freeChunk(Chunk *chunk);
+void freeChunk(VM *vm, Compiler *compiler, Chunk *chunk);
 
 #endif // clox_chunk_h

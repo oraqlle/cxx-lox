@@ -46,16 +46,17 @@ static void runtimeError(VM *vm, const char *format, ...) {
     resetStack(vm);
 }
 
-static void defineNative(VM *vm, const char *name, NativeFn func, uint8_t arity) {
+static void defineNative(VM *vm, Compiler *compiler, const char *name, NativeFn func,
+                         uint8_t arity) {
 
     if (arity == UINT8_MAX) {
         fprintf(stderr, "Can't have more than 255 parameters in native function %s.\n",
                 name);
     }
 
-    push(vm, OBJ_VAL(copyString(strlen(name), name, vm)));
-    push(vm, OBJ_VAL(newNative(func, arity, vm)));
-    tableSet(&vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
+    push(vm, OBJ_VAL(copyString(vm, compiler, strlen(name), name)));
+    push(vm, OBJ_VAL(newNative(vm, compiler, func, arity)));
+    tableSet(vm, compiler, &vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
     pop(vm);
     pop(vm);
 }
@@ -109,7 +110,7 @@ static bool callValue(VM *vm, Value callee, uint8_t argCount) {
     return false;
 }
 
-static ObjUpvalue *captureUpvalue(VM *vm, Value *local) {
+static ObjUpvalue *captureUpvalue(VM *vm, Compiler *compiler, Value *local) {
     ObjUpvalue *prevUpvalue = NULL;
     ObjUpvalue *upvalue = vm->openUpvalues;
 
@@ -122,7 +123,7 @@ static ObjUpvalue *captureUpvalue(VM *vm, Value *local) {
         return upvalue;
     }
 
-    ObjUpvalue *createdUpvalue = newUpvalue(local, vm);
+    ObjUpvalue *createdUpvalue = newUpvalue(vm, compiler, local);
     createdUpvalue->next = (struct ObjUpvalue *)upvalue;
 
     if (prevUpvalue == NULL) {
@@ -147,17 +148,17 @@ static bool isFalsey(Value value) {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 
-static void concatenate(VM *vm) {
+static void concatenate(VM *vm, Compiler *compiler) {
     ObjString *b = AS_STRING(pop(vm));
     ObjString *a = AS_STRING(pop(vm));
 
     size_t length = a->length + b->length;
-    char *chars = ALLOCATE(char, length + 1);
+    char *chars = ALLOCATE(vm, compiler, char, length + 1);
     memcpy(chars, a->chars, a->length);
     memcpy(chars + a->length, b->chars, b->length);
     chars[length] = '\0';
 
-    ObjString *string = takeString(length, chars, vm);
+    ObjString *string = takeString(vm, compiler, length, chars);
     push(vm, OBJ_VAL(string));
 }
 
@@ -172,16 +173,16 @@ void initVM(VM *vm) {
     initTable(&vm->globals);
     initTable(&vm->strings);
 
-    defineNative(vm, "clock", clockNative, 0);
+    defineNative(vm, NULL, "clock", clockNative, 0);
 }
 
-void freeVM(VM *vm) {
-    freeObjects(vm);
-    freeTable(&vm->globals);
-    freeTable(&vm->strings);
+void freeVM(VM *vm, Compiler *compiler) {
+    freeObjects(vm, compiler);
+    freeTable(vm, compiler, &vm->globals);
+    freeTable(vm, compiler, &vm->strings);
 }
 
-static InterpreterResult run(VM *vm) {
+static InterpreterResult run(VM *vm, Compiler *compiler) {
     CallFrame *frame = &vm->frames[vm->frameCount - 1];
 
 #define READ_BYTE() (*frame->ip++)
@@ -256,7 +257,7 @@ static InterpreterResult run(VM *vm) {
             }
             case OP_DEFINE_GLOBAL: {
                 ObjString *name = READ_STRING();
-                tableSet(&vm->globals, name, peek(vm, 0));
+                tableSet(vm, compiler, &vm->globals, name, peek(vm, 0));
                 pop(vm);
                 break;
             }
@@ -268,7 +269,7 @@ static InterpreterResult run(VM *vm) {
             case OP_SET_GLOBAL: {
                 ObjString *name = READ_STRING();
 
-                if (tableSet(&vm->globals, name, peek(vm, 0))) {
+                if (tableSet(vm, compiler, &vm->globals, name, peek(vm, 0))) {
                     tableDelete(&vm->globals, name);
                     runtimeError(vm, "Undefined variable '%s'.", name->chars);
                     return INTERPRETER_RUNTIME_ERR;
@@ -300,7 +301,7 @@ static InterpreterResult run(VM *vm) {
                 break;
             case OP_ADD: {
                 if (IS_STRING(peek(vm, 0)) && IS_STRING(peek(vm, 1))) {
-                    concatenate(vm);
+                    concatenate(vm, compiler);
                 } else if (IS_NUMBER(peek(vm, 0)) && IS_NUMBER(peek(vm, 1))) {
                     double b = AS_NUMBER(pop(vm));
                     double a = AS_NUMBER(pop(vm));
@@ -367,7 +368,7 @@ static InterpreterResult run(VM *vm) {
             }
             case OP_CLOSURE: {
                 ObjFunction *func = AS_FUNCTION(READ_CONSTANT());
-                ObjClosure *closure = newClosure(vm, func);
+                ObjClosure *closure = newClosure(vm, compiler, func);
                 push(vm, OBJ_VAL(closure));
 
                 for (size_t idx = 0; idx < closure->upvalueCount; idx++) {
@@ -375,7 +376,8 @@ static InterpreterResult run(VM *vm) {
                     uint8_t index = READ_BYTE();
 
                     if (isLocal) {
-                        closure->upvalues[idx] = captureUpvalue(vm, frame->slots + index);
+                        closure->upvalues[idx] =
+                            captureUpvalue(vm, compiler, frame->slots + index);
                     } else {
                         closure->upvalues[idx] = frame->closure->upvalues[index];
                     }
@@ -421,12 +423,12 @@ InterpreterResult interpret(VM *vm, Scanner *scanner, const char *source) {
     }
 
     push(vm, OBJ_VAL(func));
-    ObjClosure *closure = newClosure(vm, func);
+    ObjClosure *closure = newClosure(vm, NULL, func);
     pop(vm);
     push(vm, OBJ_VAL(closure));
     call(vm, closure, 0);
 
-    return run(vm);
+    return run(vm, NULL);
 }
 
 void push(VM *vm, Value value) {

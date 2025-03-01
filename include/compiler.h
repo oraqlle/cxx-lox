@@ -7,7 +7,6 @@
 #ifndef clox_compiler_h
 #define clox_compiler_h
 
-#include "chunk.h"
 #include "common.h"
 #include "object.h"
 #include "scanner.h"
@@ -65,8 +64,8 @@ typedef enum {
 /**
  * @brief Compilers representation of the VM stack
  */
-typedef struct {
-    struct Compiler *enclosing;
+struct Compiler {
+    Compiler *enclosing;
 
     ObjFunction *func;
     FunctionType ftype;
@@ -75,7 +74,7 @@ typedef struct {
     intmax_t localCount;
     Upvalue upvalues[UINT8_COUNT];
     intmax_t scopeDepth;
-} Compiler;
+};
 
 /**
  * @brief Function type for functions in parsing lookup table.
@@ -105,6 +104,6 @@ ObjFunction *compile(Scanner *scanner, const char *source, VM *vm);
 /**
  * @brief Mark objects created by Compilers to not be swept by GC
  */
-void markCompilerRoots(VM *vm);
+void markCompilerRoots(Compiler *compiler);
 
 #endif // clox_compiler_h

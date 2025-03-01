@@ -132,32 +132,32 @@ typedef struct {
 /**
  * @brief Constructs a function object
  */
-ObjFunction *newFunction(VM *vm);
+ObjFunction *newFunction(VM *vm, Compiler *compiler);
 
 /**
  * @brief Constructs a closure object
  */
-ObjClosure *newClosure(VM *vm, ObjFunction *func);
+ObjClosure *newClosure(VM *vm, Compiler *compiler, ObjFunction *func);
 
 /**
  * @brief Constructs new native/OS function object
  */
-ObjNative *newNative(NativeFn func, uint8_t arity, VM *vm);
+ObjNative *newNative(VM *vm, Compiler *compiler, NativeFn func, uint8_t arity);
 
 /**
  * @brief Takes ownership of raw char data it is passed
  */
-ObjString *takeString(size_t length, char *chars, VM *vm);
+ObjString *takeString(VM *vm, Compiler *compiler, size_t length, char *chars);
 
 /**
  * @brief Copies a string literal from scanned texted into string object
  */
-ObjString *copyString(size_t length, const char *chars, VM *vm);
+ObjString *copyString(VM *vm, Compiler *compiler, size_t length, const char *chars);
 
 /**
  * @brief Constructs an Upvalue from a variable
  */
-ObjUpvalue *newUpvalue(Value *slot, VM *vm);
+ObjUpvalue *newUpvalue(VM *vm, Compiler *compiler, Value *slot);
 
 /**
  * @brief Helper function for displaying objects.

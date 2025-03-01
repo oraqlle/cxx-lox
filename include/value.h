@@ -85,12 +85,12 @@ void initValueArray(ValueArray *array);
 /**
  * @brief Append new value to ValueArray.
  */
-void writeValueArray(ValueArray *array, Value value);
+void writeValueArray(VM *vm, Compiler *compiler, ValueArray *array, Value value);
 
 /**
  * @brief Frees ValueArray.
  */
-void freeValueArray(ValueArray *array);
+void freeValueArray(VM *vm, Compiler *compiler, ValueArray *array);
 
 /**
  * @brief Checks if two Values are equal.

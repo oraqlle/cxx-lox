@@ -14,8 +14,8 @@ void initTable(Table *table) {
     table->entries = NULL;
 }
 
-void freeTable(Table *table) {
-    FREE_ARRAY(Entry, table->entries, table->capacity);
+void freeTable(VM *vm, Compiler *compiler, Table *table) {
+    FREE_ARRAY(vm, compiler, Entry, table->entries, table->capacity);
     initTable(table);
 }
 
@@ -44,8 +44,8 @@ static Entry *findEntry(Entry *entries, size_t capacity, ObjString *key) {
     }
 }
 
-static void adjustCapacity(Table *table, uint32_t capacity) {
-    Entry *entries = ALLOCATE(Entry, capacity);
+static void adjustCapacity(VM *vm, Compiler *compiler, Table *table, uint32_t capacity) {
+    Entry *entries = ALLOCATE(vm, compiler, Entry, capacity);
 
     for (size_t i = 0; i < capacity; i++) {
         entries[i].key = NULL;
@@ -66,16 +66,16 @@ static void adjustCapacity(Table *table, uint32_t capacity) {
         table->count += 1;
     }
 
-    FREE_ARRAY(Entry, table->entries, table->capacity);
+    FREE_ARRAY(vm, compiler, Entry, table->entries, table->capacity);
 
     table->entries = entries;
     table->capacity = capacity;
 }
 
-bool tableSet(Table *table, ObjString *key, Value value) {
+bool tableSet(VM *vm, Compiler *compiler, Table *table, ObjString *key, Value value) {
     if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
         uint32_t capacity = GROW_CAPACITY(table->capacity);
-        adjustCapacity(table, capacity);
+        adjustCapacity(vm, compiler, table, capacity);
     }
 
     Entry *entry = findEntry(table->entries, table->capacity, key);
@@ -90,12 +90,12 @@ bool tableSet(Table *table, ObjString *key, Value value) {
     return isNewKey;
 }
 
-void tableAddAll(Table *from, Table *to) {
+void tableAddAll(VM *vm, Compiler *compiler, Table *from, Table *to) {
     for (size_t i = 0; i < from->capacity; i++) {
         Entry *entry = &from->entries[i];
 
         if (entry->key != NULL) {
-            tableSet(to, entry->key, entry->value);
+            tableSet(vm, compiler, to, entry->key, entry->value);
         }
     }
 }

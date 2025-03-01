@@ -8,6 +8,7 @@
 #define clox_memory_h
 
 #include "common.h"
+#include "compiler.h"
 #include "vm.h"
 
 /**
@@ -21,29 +22,33 @@
 /**
  * @brief Frees Lox objects
  */
-#define FREE(type, pointer) reallocate(pointer, sizeof(type), 0)
+#define FREE(vm, compiler, type, pointer)                                                \
+    reallocate(vm, compiler, pointer, sizeof(type), 0)
 
 /**
  * @brief Grows a dynamic array using `reallocate()`.
  */
-#define GROW_ARRAY(type, pointer, oldCount, newCount)                                    \
-    (type *)reallocate(pointer, sizeof(type) * (oldCount), sizeof(type) * (newCount))
+#define GROW_ARRAY(vm, compiler, type, pointer, oldCount, newCount)                      \
+    (type *)reallocate(vm, compiler, pointer, sizeof(type) * (oldCount),                 \
+                       sizeof(type) * (newCount))
 
 /**
  * @brief Frees a dynamic array using `reallocate()`.
  */
-#define FREE_ARRAY(type, pointer, oldCount)                                              \
-    reallocate(pointer, sizeof(type) * (oldCount), 0)
+#define FREE_ARRAY(vm, compiler, type, pointer, oldCount)                                \
+    reallocate(vm, compiler, pointer, sizeof(type) * (oldCount), 0)
 
 /**
  * @brief Allocates multiple bytes on VM
  */
-#define ALLOCATE(type, count) (type *)reallocate(NULL, 0, sizeof(type) * (count))
+#define ALLOCATE(vm, compiler, type, count)                                              \
+    (type *)reallocate(vm, compiler, NULL, 0, sizeof(type) * (count))
 
 /**
  * @brief Single heap memory management function for VM
  */
-void *reallocate(void *pointer, size_t oldSize, size_t newSize);
+void *reallocate(VM *vm, Compiler *compiler, void *pointer, size_t oldSize,
+                 size_t newSize);
 
 /**
  * @brief Marks a Lox Obj to not be swept by GC
@@ -58,11 +63,11 @@ void markValue(Value value);
 /**
  * @brief Cleans up unused memory using mark-sweep GC
  */
-void collectGarbage(VM *vm);
+void collectGarbage(VM *vm, Compiler *compiler);
 
 /**
  * @brief Free heap objects from VM
  */
-void freeObjects(VM *vm);
+void freeObjects(VM *vm, Compiler *compiler);
 
 #endif // clox_memory_h
