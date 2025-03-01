@@ -149,8 +149,12 @@ static bool isFalsey(Value value) {
 }
 
 static void concatenate(VM *vm, Compiler *compiler) {
-    ObjString *b = AS_STRING(pop(vm));
-    ObjString *a = AS_STRING(pop(vm));
+    // String operands a peeked instead of popped so the values
+    // remain on the stack and is reachable by VM and thus
+    // isn't swept if the GC is triggered by allocating memory
+    // for the destination string.
+    ObjString *b = AS_STRING(peek(vm, 0));
+    ObjString *a = AS_STRING(peek(vm, 0));
 
     size_t length = a->length + b->length;
     char *chars = ALLOCATE(vm, compiler, char, length + 1);
@@ -159,6 +163,9 @@ static void concatenate(VM *vm, Compiler *compiler) {
     chars[length] = '\0';
 
     ObjString *string = takeString(vm, compiler, length, chars);
+    // Popped here once allocation is successful.
+    pop(vm);
+    pop(vm);
     push(vm, OBJ_VAL(string));
 }
 

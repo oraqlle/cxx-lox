@@ -1,6 +1,7 @@
 #include "chunk.h"
 #include "memory.h"
 #include "value.h"
+#include "vm.h"
 
 void initChunk(Chunk *chunk) {
     chunk->count = 0;
@@ -26,7 +27,12 @@ void writeChunk(VM *vm, Compiler *compiler, Chunk *chunk, uint8_t byte, size_t l
 }
 
 uint8_t addConstant(VM *vm, Compiler *compiler, Chunk *chunk, Value value) {
+    // Push-pop of value is done so that value is reachable
+    // by VM and thus isn't swept if the GC is triggered by
+    // `writeValueArray'.
+    push(vm, value);
     writeValueArray(vm, compiler, &chunk->constants, value);
+    pop(vm);
     return chunk->constants.count - 1;
 }
 

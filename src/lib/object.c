@@ -7,6 +7,7 @@
 #include "object.h"
 #include "table.h"
 #include "value.h"
+#include "vm.h"
 
 #define ALLOCATE_OBJ(vm, compiler, type, objectType)                                     \
     (type *)allocateObject(vm, compiler, sizeof(type), objectType)
@@ -32,7 +33,14 @@ static ObjString *allocateString(VM *vm, Compiler *compiler, size_t length, char
     string->length = length;
     string->chars = chars;
     string->hash = hash;
+
+    // Push-pop of value is done so that value is reachable
+    // by VM and thus isn't swept if the GC is triggered by
+    // `tableSet'.
+    push(vm, OBJ_VAL(string));
     tableSet(vm, compiler, &vm->strings, string, NIL_VAL);
+    pop(vm);
+
     return string;
 }
 
