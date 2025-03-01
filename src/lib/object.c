@@ -15,9 +15,15 @@
 static void *allocateObject(size_t size, VM *vm, ObjType type) {
     Obj *object = (Obj *)reallocate(NULL, 0, size);
     object->type = type;
+    object->isMarked = false;
 
     object->next = vm->objects;
     vm->objects = object;
+
+#ifdef DEBUG_LOG_GC
+    printf("%p allocate %zu for %d", (void *)object, size, type);
+#endif // DEBUG_LOG_GC
+
     return object;
 }
 
@@ -53,7 +59,7 @@ ObjFunction *newFunction(VM *vm) {
 }
 
 ObjClosure *newClosure(VM *vm, ObjFunction *func) {
-    ObjUpvalue **upvalues = ALLOCATE(ObjUpvalue*, func->upvalueCount);
+    ObjUpvalue **upvalues = ALLOCATE(ObjUpvalue *, func->upvalueCount);
 
     for (size_t idx = 0; idx < func->upvalueCount; idx++) {
         upvalues[idx] = NULL;

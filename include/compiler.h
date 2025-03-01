@@ -102,4 +102,9 @@ void initCompiler(Compiler *compiler, Compiler *enclosing, FunctionType ftype,
  */
 ObjFunction *compile(Scanner *scanner, const char *source, VM *vm);
 
+/**
+ * @brief Mark objects created by Compilers to not be swept by GC
+ */
+void markCompilerRoots(VM *vm);
+
 #endif // clox_compiler_h

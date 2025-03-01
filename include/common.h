@@ -22,6 +22,12 @@ typedef struct VM VM;
 
 #undef DEBUG_PRINT_CODE
 #define DEBUG_PRINT_CODE
+
+#undef DEBUG_STRESS_GC
+#define DEBUG_STRESS_GC
+
+#undef DEBUG_LOG_GC
+#define DEBUG_LOG_GC
 #endif
 
 #endif // clox_common_h

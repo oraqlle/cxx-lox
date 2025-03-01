@@ -46,6 +46,21 @@
 void *reallocate(void *pointer, size_t oldSize, size_t newSize);
 
 /**
+ * @brief Marks a Lox Obj to not be swept by GC
+ */
+void markObject(Obj *object);
+
+/**
+ * @brief Marks a Value to not be swept by GC
+ */
+void markValue(Value value);
+
+/**
+ * @brief Cleans up unused memory using mark-sweep GC
+ */
+void collectGarbage(VM *vm);
+
+/**
  * @brief Free heap objects from VM
  */
 void freeObjects(VM *vm);

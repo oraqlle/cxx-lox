@@ -60,4 +60,9 @@ bool tableDelete(Table *table, ObjString *key);
  */
 ObjString *tableFindString(Table *table, const char *chars, size_t length, uint32_t hash);
 
+/**
+ * @brief Marks globals in the VMs hash table to not be swept by GC
+ */
+void markTable(Table *table);
+
 #endif // clox_table_h
