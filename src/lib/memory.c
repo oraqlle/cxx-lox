@@ -11,12 +11,24 @@
 #include <stdio.h>
 #endif // DEBUG_LOG_GC
 
+#define GC_HEAP_GROW_FACTOR 2
+
 void *reallocate(VM *vm, Compiler *compiler, void *pointer, size_t oldSize,
                  size_t newSize) {
+    vm->bytesAllocated += newSize - oldSize;
+
     if (newSize > oldSize) {
 #ifdef DEBUG_STRESS_GC
         collectGarbage(vm, compiler);
+#else
+        if (vm->bytesAllocated > vm->nextGC) {
+            collectGarbage(vm, compiler);
+        }
 #endif // DEBUG_STRESS_GC
+
+        if (vm->bytesAllocated > vm->nextGC) {
+            collectGarbage(vm, compiler);
+        }
     }
     if (newSize == 0) {
         free(pointer);
@@ -195,14 +207,20 @@ static void sweep(VM *vm, Compiler *compiler) {
 void collectGarbage(VM *vm, Compiler *compiler) {
 #ifdef DEBUG_LOG_GC
     printf("-- gc begin\n");
+    size_t before = vm->bytesAllocated;
 #endif // DEBUG_LOG_GC
 
     markRoots(vm, compiler);
     traceReferences(vm);
-    sweep(vm);
+    tableRemoveWhite(vm, compiler, &vm->strings);
+    sweep(vm, compiler);
+
+    vm->nextGC = vm->bytesAllocated * GC_HEAP_GROW_FACTOR;
 
 #ifdef DEBUG_LOG_GC
     printf("-- gc end\n");
+    printf("   collected %zu bytes (from %zu to %zu) next GC at %zu\n",
+           before - vm->bytesAllocated, before, vm->bytesAllocated, vm->nextGC);
 #endif // DEBUG_LOG_GC
 }
 

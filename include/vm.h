@@ -37,6 +37,9 @@ struct VM {
     Table strings;
 
     ObjUpvalue *openUpvalues;
+
+    size_t bytesAllocated;
+    size_t nextGC;
     Obj *objects;
 
     size_t greyCount;
