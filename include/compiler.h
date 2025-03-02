@@ -104,6 +104,6 @@ ObjFunction *compile(Scanner *scanner, const char *source, VM *vm);
 /**
  * @brief Mark objects created by Compilers to not be swept by GC
  */
-void markCompilerRoots(Compiler *compiler);
+void markCompilerRoots(VM *vm, Compiler *compiler);
 
 #endif // clox_compiler_h

@@ -419,6 +419,9 @@ static InterpreterResult run(VM *vm, Compiler *compiler) {
                 frame = &vm->frames[vm->frameCount - 1];
                 break;
             }
+            case OP_CLASS:
+                push(vm, OBJ_VAL(newClass(vm, compiler, READ_STRING())));
+                break;
         }
     }
 #undef READ_BYTE

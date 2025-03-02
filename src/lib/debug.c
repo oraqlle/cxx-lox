@@ -5,6 +5,7 @@
 #include "debug.h"
 #include "object.h"
 #include "value.h"
+#include "vm.h"
 
 void disassembleChunk(Chunk *chunk, const char *name) {
     printf("== %s ==\n", name);
@@ -132,6 +133,8 @@ size_t disassembleInstruction(Chunk *chunk, size_t offset) {
             return simpleInstruction("OP_CLOSE_UPVALUE", offset);
         case OP_RETURN:
             return simpleInstruction("OP_RETURN", offset);
+        case OP_CLASS:
+            return constantInstruction("OP_CLASS", chunk, offset);
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;

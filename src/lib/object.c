@@ -66,6 +66,12 @@ ObjFunction *newFunction(VM *vm, Compiler *compiler) {
     return func;
 }
 
+ObjClass *newClass(VM *vm, Compiler *compiler, ObjString *name) {
+    ObjClass *klass = ALLOCATE_OBJ(vm, compiler, ObjClass, OBJ_CLASS);
+    klass->name = name;
+    return klass;
+}
+
 ObjClosure *newClosure(VM *vm, Compiler *compiler, ObjFunction *func) {
     ObjUpvalue **upvalues = ALLOCATE(vm, compiler, ObjUpvalue *, func->upvalueCount);
 
@@ -135,6 +141,9 @@ static void printFunction(ObjFunction *func) {
 
 void printObject(Value value) {
     switch (OBJ_TYPE(value)) {
+        case OBJ_CLASS:
+            printf("%s", AS_CLASS(value)->name->chars);
+            break;
         case OBJ_CLOSURE:
             printFunction(AS_CLOSURE(value)->func);
             break;

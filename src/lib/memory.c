@@ -93,6 +93,11 @@ static void blackenObject(VM *vm, Obj *object) {
 #endif // DEBUG_LOG_GC
 
     switch (object->type) {
+        case OBJ_CLASS: {
+            ObjClass *klass = (ObjClass *)object;
+            markObject(vm, (Obj *)klass->name);
+            break;
+        }
         case OBJ_CLOSURE: {
             ObjClosure *closure = (ObjClosure *)object;
             markObject(vm, (Obj *)closure->func);
@@ -125,6 +130,10 @@ static void freeObject(VM *vm, Compiler *compiler, Obj *object) {
 #endif // DEBUG_LOG_GC
 
     switch (object->type) {
+        case OBJ_CLASS: {
+            FREE(vm, compiler, ObjClass, object);
+            break;
+        }
         case OBJ_CLOSURE: {
             ObjClosure *closure = (ObjClosure *)object;
             FREE_ARRAY(vm, compiler, ObjUpvalue *, closure->upvalues,
@@ -170,7 +179,7 @@ static void markRoots(VM *vm, Compiler *compiler) {
     }
 
     markTable(vm, &vm->globals);
-    markCompilerRoots(compiler);
+    markCompilerRoots(vm, compiler);
 }
 
 static void traceReferences(VM *vm) {

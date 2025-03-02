@@ -628,6 +628,19 @@ static void function(Parser *parser, Scanner *scanner, VM *vm, Compiler *compile
     }
 }
 
+static void classDeclaration(Parser *parser, Scanner *scanner, VM *vm,
+                             Compiler *compiler) {
+    consume(parser, scanner, TOKEN_IDENTIFIER, "Expect class name.");
+    uint8_t nameConstant = identifierConstant(parser, &parser->previous, compiler, vm);
+    declareVariable(parser, compiler);
+
+    emitBytes(parser, OP_CLASS, nameConstant, compiler, vm);
+    defineVariable(parser, compiler, vm, nameConstant);
+
+    consume(parser, scanner, TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+    consume(parser, scanner, TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+}
+
 static void funDeclaration(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
     uint8_t global =
         parseVariable(parser, scanner, vm, compiler, "Expect function name.");
@@ -787,7 +800,9 @@ static void synchronize(Parser *parser, Scanner *scanner) {
 }
 
 static void declaration(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
-    if (match(parser, scanner, TOKEN_FUN)) {
+    if (match(parser, scanner, TOKEN_CLASS)) {
+        classDeclaration(parser, scanner, vm, compiler);
+    } else if (match(parser, scanner, TOKEN_FUN)) {
         funDeclaration(parser, scanner, vm, compiler);
     } else if (match(parser, scanner, TOKEN_VAR)) {
         varDeclaration(parser, scanner, vm, compiler);
@@ -862,9 +877,9 @@ ObjFunction *compile(Scanner *scanner, const char *source, VM *vm) {
     return parser.hadError ? NULL : func;
 }
 
-void markCompilerRoots(Compiler *compiler) {
+void markCompilerRoots(VM *vm, Compiler *compiler) {
     while (compiler != NULL) {
-        markObject((Obj *)compiler->func);
+        markObject(vm, (Obj *)compiler->func);
         compiler = compiler->enclosing;
     }
 }

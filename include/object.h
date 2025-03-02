@@ -12,6 +12,11 @@
 #define OBJ_TYPE(object) (AS_OBJ(object)->type)
 
 /**
+ * @brief Checks if value is a class object
+ */
+#define IS_CLASS(value) isObjType(value, OBJ_CLASS)
+
+/**
  * @brief Checks if value is a closure object
  */
 #define IS_CLOSURE(value) isObjType(value, OBJ_CLOSURE)
@@ -30,6 +35,11 @@
  * @brief Checks if value is a string
  */
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
+
+/**
+ * @brief Helper macro for casting value to a class object
+ */
+#define AS_CLASS(value) ((ObjClass *)AS_OBJ(value))
 
 /**
  * @brief Helper macro for casting value to a closure object
@@ -57,6 +67,7 @@
  * @brief Type of heap object
  */
 typedef enum {
+    OBJ_CLASS,
     OBJ_CLOSURE,
     OBJ_FUNCTION,
     OBJ_NATIVE,
@@ -129,10 +140,20 @@ typedef struct {
     size_t upvalueCount;
 } ObjClosure;
 
+typedef struct {
+    Obj obj;
+    ObjString *name;
+} ObjClass;
+
 /**
  * @brief Constructs a function object
  */
 ObjFunction *newFunction(VM *vm, Compiler *compiler);
+
+/**
+ * @brief Constructs a class object
+ */
+ObjClass *newClass(VM *vm, Compiler *compiler, ObjString *name);
 
 /**
  * @brief Constructs a closure object
