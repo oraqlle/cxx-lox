@@ -363,6 +363,19 @@ static void call(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
     emitBytes(parser, OP_CALL, argCount, compiler, vm);
 }
 
+static void dot(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
+                bool canAssign) {
+    consume(parser, scanner, TOKEN_IDENTIFIER, "Expect property name after '.'.");
+    uint8_t name = identifierConstant(parser, &parser->previous, compiler, vm);
+
+    if (canAssign && match(parser, scanner, TOKEN_EQUAL)) {
+        expression(parser, scanner, vm, compiler);
+        emitBytes(parser, OP_SET_PROPERTY, name, compiler, vm);
+    } else {
+        emitBytes(parser, OP_GET_PROPERTY, name, compiler, vm);
+    }
+}
+
 static void literal(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
                     bool canAssign) {
     switch (parser->previous.type) {
@@ -481,7 +494,7 @@ ParseRule rules[] = {
     [TOKEN_LEFT_BRACE]    = {NULL,     NULL,   PREC_NONE}, 
     [TOKEN_RIGHT_BRACE]   = {NULL,     NULL,   PREC_NONE},
     [TOKEN_COMMA]         = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_DOT]           = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_DOT]           = {NULL,     dot,    PREC_CALL},
     [TOKEN_MINUS]         = {unary,    binary, PREC_TERM},
     [TOKEN_PLUS]          = {NULL,     binary, PREC_TERM},
     [TOKEN_SEMICOLON]     = {NULL,     NULL,   PREC_NONE},
