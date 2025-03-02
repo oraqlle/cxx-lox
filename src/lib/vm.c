@@ -82,9 +82,14 @@ static bool call(VM *vm, ObjClosure *closure, uint8_t argCount) {
     return true;
 }
 
-static bool callValue(VM *vm, Value callee, uint8_t argCount) {
+static bool callValue(VM *vm, Compiler *compiler, Value callee, uint8_t argCount) {
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
+            case OBJ_CLASS: {
+                ObjClass *klass = AS_CLASS(callee);
+                vm->stackTop[-argCount - 1] = OBJ_VAL(newInstance(vm, compiler, klass));
+                return true;
+            }
             case OBJ_CLOSURE:
                 return call(vm, AS_CLOSURE(callee), argCount);
             case OBJ_NATIVE: {
@@ -372,7 +377,7 @@ static InterpreterResult run(VM *vm, Compiler *compiler) {
             case OP_CALL: {
                 uint8_t argCount = READ_BYTE();
 
-                if (!callValue(vm, peek(vm, argCount), argCount)) {
+                if (!callValue(vm, compiler, peek(vm, argCount), argCount)) {
                     return INTERPRETER_RUNTIME_ERR;
                 }
 

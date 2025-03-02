@@ -66,6 +66,13 @@ ObjFunction *newFunction(VM *vm, Compiler *compiler) {
     return func;
 }
 
+ObjInstance *newInstance(VM *vm, Compiler *compiler, ObjClass *klass) {
+    ObjInstance *instance = ALLOCATE_OBJ(vm, compiler, ObjInstance, OBJ_INSTANCE);
+    instance->klass = klass;
+    initTable(&instance->fields);
+    return instance;
+}
+
 ObjClass *newClass(VM *vm, Compiler *compiler, ObjString *name) {
     ObjClass *klass = ALLOCATE_OBJ(vm, compiler, ObjClass, OBJ_CLASS);
     klass->name = name;
@@ -149,6 +156,9 @@ void printObject(Value value) {
             break;
         case OBJ_FUNCTION:
             printFunction(AS_FUNCTION(value));
+            break;
+        case OBJ_INSTANCE:
+            printf("%s instance", AS_INSTANCE(value)->klass->name->chars);
             break;
         case OBJ_NATIVE:
             printf("<native fn>");

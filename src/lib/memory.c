@@ -4,6 +4,7 @@
 #include "compiler.h"
 #include "memory.h"
 #include "object.h"
+#include "table.h"
 #include "value.h"
 
 #ifdef DEBUG_LOG_GC
@@ -114,6 +115,12 @@ static void blackenObject(VM *vm, Obj *object) {
             markArray(vm, &func->chunk.constants);
             break;
         }
+        case OBJ_INSTANCE: {
+            ObjInstance *instance = (ObjInstance *)object;
+            markObject(vm, (Obj *)instance->klass);
+            markTable(vm, &instance->fields);
+            break;
+        }
         case OBJ_UPVALUE:
             markValue(vm, ((ObjUpvalue *)object)->closed);
             break;
@@ -145,6 +152,12 @@ static void freeObject(VM *vm, Compiler *compiler, Obj *object) {
             ObjFunction *func = (ObjFunction *)object;
             freeChunk(vm, compiler, &func->chunk);
             FREE(vm, compiler, ObjFunction, object);
+            break;
+        }
+        case OBJ_INSTANCE: {
+            ObjInstance *instance = (ObjInstance *)object;
+            freeTable(vm, compiler, &instance->fields);
+            FREE(vm, compiler, ObjInstance, object);
             break;
         }
         case OBJ_NATIVE: {

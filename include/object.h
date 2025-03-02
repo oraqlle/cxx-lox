@@ -3,6 +3,7 @@
 
 #include "chunk.h"
 #include "common.h"
+#include "table.h"
 #include "value.h"
 #include <stdint.h>
 
@@ -25,6 +26,11 @@
  * @brief Checks if value is a function object
  */
 #define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
+
+/**
+ * @brief Checks if value is a class instance object
+ */
+#define IS_INSTANCE(value) isObjType(value, OBJ_INSTANCE)
 
 /**
  * brief Checks if value is a native OS function
@@ -52,6 +58,11 @@
 #define AS_FUNCTION(value) ((ObjFunction *)AS_OBJ(value))
 
 /**
+ * @brief Helper macro for casting value to class instance object.
+ */
+#define AS_INSTANCE(value) ((ObjInstance *)AS_OBJ(value))
+
+/**
  * brief Helper macro for casting value to native function object
  */
 #define AS_NATIVE_OBJ(value) ((ObjNative *)AS_OBJ(value))
@@ -70,6 +81,7 @@ typedef enum {
     OBJ_CLASS,
     OBJ_CLOSURE,
     OBJ_FUNCTION,
+    OBJ_INSTANCE,
     OBJ_NATIVE,
     OBJ_STRING,
     OBJ_UPVALUE,
@@ -145,10 +157,21 @@ typedef struct {
     ObjString *name;
 } ObjClass;
 
+typedef struct {
+    Obj obj;
+    ObjClass *klass;
+    Table fields;
+} ObjInstance;
+
 /**
  * @brief Constructs a function object
  */
 ObjFunction *newFunction(VM *vm, Compiler *compiler);
+
+/**
+ * @brief Constructs a class instance object
+ */
+ObjInstance *newInstance(VM *vm, Compiler *compiler, ObjClass *klass);
 
 /**
  * @brief Constructs a class object
