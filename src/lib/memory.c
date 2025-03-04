@@ -91,6 +91,12 @@ static void blackenObject(VM *vm, Obj *object) {
 #endif // DEBUG_LOG_GC
 
     switch (object->type) {
+        case OBJ_BOUND_METHOD: {
+            ObjBoundMethod *bound = (ObjBoundMethod *)object;
+            markValue(vm, bound->receiver);
+            markObject(vm, (Obj *)bound->method);
+            break;
+        }
         case OBJ_CLASS: {
             ObjClass *klass = (ObjClass *)object;
             markObject(vm, (Obj *)klass->name);
@@ -135,6 +141,9 @@ static void freeObject(VM *vm, Compiler *compiler, Obj *object) {
 #endif // DEBUG_LOG_GC
 
     switch (object->type) {
+        case OBJ_BOUND_METHOD:
+            FREE(vm, compiler, ObjBoundMethod, object);
+            break;
         case OBJ_CLASS: {
             ObjClass *klass = (ObjClass *)object;
             freeTable(vm, compiler, &klass->methods);

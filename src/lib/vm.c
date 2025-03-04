@@ -115,6 +115,21 @@ static bool callValue(VM *vm, Compiler *compiler, Value callee, uint8_t argCount
     return false;
 }
 
+static bool bindMethod(VM *vm, Compiler *compiler, ObjClass *klass, ObjString *name) {
+    Value method;
+
+    if (!tableGet(&klass->methods, name, &method)) {
+        runtimeError(vm, "Undefined property '%s'.", name->chars);
+        return false;
+    }
+
+    ObjBoundMethod *bound = newBoundMethod(vm, compiler, peek(vm, 0), AS_CLOSURE(method));
+
+    pop(vm);
+    push(vm, OBJ_VAL(bound));
+    return true;
+}
+
 static ObjUpvalue *captureUpvalue(VM *vm, Compiler *compiler, Value *local) {
     ObjUpvalue *prevUpvalue = NULL;
     ObjUpvalue *upvalue = vm->openUpvalues;
@@ -329,8 +344,11 @@ static InterpreterResult run(VM *vm, Compiler *compiler) {
                     break;
                 }
 
-                runtimeError(vm, "Undefined property '%s'.", name->chars);
-                return INTERPRETER_RUNTIME_ERR;
+                if (!bindMethod(&instance->klass, name)) {
+                    return INTERPRETER_RUNTIME_ERR;
+                }
+
+                break;
             }
             case OP_SET_PROPERTY: {
 

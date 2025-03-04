@@ -13,6 +13,11 @@
 #define OBJ_TYPE(object) (AS_OBJ(object)->type)
 
 /**
+ * @brief Checks if value is a bound method object
+ */
+#define IS_BOUND_METHOD(value) isObjType(value, OBJ_BOUND_METHOD)
+
+/**
  * @brief Checks if value is a class object
  */
 #define IS_CLASS(value) isObjType(value, OBJ_CLASS)
@@ -41,6 +46,11 @@
  * @brief Checks if value is a string
  */
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
+
+/**
+ * @brief Helper macro for casting value to a bound method object
+ */
+#define AS_BOUND_METHOD(value) ((ObjBoundMethod *)AS_OBJ(value))
 
 /**
  * @brief Helper macro for casting value to a class object
@@ -78,6 +88,7 @@
  * @brief Type of heap object
  */
 typedef enum {
+    OBJ_BOUND_METHOD,
     OBJ_CLASS,
     OBJ_CLOSURE,
     OBJ_FUNCTION,
@@ -163,6 +174,18 @@ typedef struct {
     ObjClass *klass;
     Table fields;
 } ObjInstance;
+
+typedef struct {
+    Obj obj;
+    Value receiver;
+    ObjClosure *method;
+} ObjBoundMethod;
+
+/**
+ * @brief Constructs a new bound method object
+ */
+ObjBoundMethod *newBoundMethod(VM *vm, Compiler *compiler, Value receiver,
+                               ObjClosure *method);
 
 /**
  * @brief Constructs a function object
