@@ -7,25 +7,22 @@
   },
   "configurePresets": [
     {
-      "name": "dev-mode",
+      "name": "dev",
       "hidden": true,
       "cacheVariables": {
-        "CLOX_DEVELOPER_MODE": "ON"
+        "CLOX_DEVELOPER_MODE": "ON",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     },
     {
-      "name": "vcpkg",
+      "name": "dev-scrict",
       "hidden": true,
-      "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-      }
-    },
-    {
-      "name": "vcpkg-win64-static",
-      "hidden": true,
-      "cacheVariables": {
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
-      }
+      "inherits": [
+        "dev",
+        "clang-tidy",
+        "cppcheck"
+      ]
     },
     {
       "name": "cppcheck",
@@ -78,27 +75,39 @@
       }
     },
     {
-      "name": "linux-build",
+      "name": "linux",
       "inherits": [
           "flags-gcc-clang",
           "std-tgt"
       ],
-      "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
-      "name": "darwin",
+      "name": "linux-dev",
+      "binaryDir": "${sourceDir}/build/linux-dev",
+      "inherits": ["dev", "linux"]
+    },
+    {
+      "name": "linux-dev-strict",
+      "binaryDir": "${sourceDir}/build/linux-dev-strict",
+      "inherits": ["dev-scrict", "linux"]
+    },
+    {
+      "name": "macos",
       "inherits": [
           "flags-appleclang",
           "std-tgt"
       ],
-      "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
-
+    },
+    {
+      "name": "macos-dev",
+      "binaryDir": "${sourceDir}/build/macos-dev",
+      "inherits": ["dev", "macos"]
     },
     {
       "name": "win64",
@@ -107,34 +116,18 @@
           "std-tgt"
       ],
       "architecture": "x64",
-      "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
 
     },
     {
-      "name": "coverage-linux",
-      "binaryDir": "${sourceDir}/build/coverage",
-        "inherits": "linux-build",
-      "hidden": true,
-      "cacheVariables": {
-        "ENABLE_COVERAGE": "ON",
-        "CMAKE_BUILD_TYPE": "Coverage",
-        "CMAKE_C_FLAGS_COVERAGE": "-Og -g --coverage -fkeep-inline-functions -fkeep-static-functions",
-        "CMAKE_EXE_LINKER_FLAGS_COVERAGE": "--coverage",
-        "CMAKE_SHARED_LINKER_FLAGS_COVERAGE": "--coverage"
-      }
-    },
-    {
-      "name": "coverage",
-      "inherits": [
-          "coverage-linux",
-          "dev-mode",
-          "vcpkg"
-      ],
-      "cacheVariables": {
-        "COVERAGE_HTML_COMMAND": ""
+      "name": "win64-dev",
+      "binaryDir": "${sourceDir}/build/win64-dev",
+      "inherits": ["dev", "win64"],
+      "environment": {
+        "UseMultiToolTask": "true",
+        "EnforceProcessCountAcrossBuilds": "true"
       }
     },
     {
@@ -142,53 +135,12 @@
       "binaryDir": "${sourceDir}/build/sanitize",
       "inherits": [
           "linux",
-          "dev-mode",
-          "vcpkg"
+          "dev"
       ],
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Sanitize",
         "CMAKE_C_FLAGS_SANITIZE": "-U_FORTIFY_SOURCE -O2 -g -fsanitize=address,undefined -fno-omit-frame-pointer -fno-common"
       }
-    },
-    {
-      "name": "build",
-      "binaryDir": "${sourceDir}/build",
-      "hidden": true
-    },
-    {
-      "name": "multi-config",
-      "description": "Speed up multi-config generators by generating only one configuration instead of the defaults",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_CONFIGURATION_TYPES": "Release"
-      }
-    },
-    {
-      "name": "macos",
-      "inherits": [
-          "build",
-          "darwin",
-          "multi-config",
-          "vcpkg"
-      ]
-    },
-    {
-      "name": "linux",
-      "inherits": [
-          "build",
-          "linux-build",
-          "vcpkg"
-      ]
-    },
-    {
-      "name": "windows",
-      "inherits": [
-          "build",
-          "win64",
-          "multi-config",
-          "vcpkg",
-          "vcpkg-win64-static"
-      ]
-    }
+    } 
   ]
 }

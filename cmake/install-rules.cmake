@@ -1,6 +1,6 @@
 install(
     TARGETS clox
-    RUNTIME COMPONENT clox_Runtime
+    RUNTIME COMPONENT clox_runtime
 )
 
 if(PROJECT_IS_TOP_LEVEL)

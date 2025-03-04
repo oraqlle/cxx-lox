@@ -26,11 +26,8 @@ void *reallocate(VM *vm, Compiler *compiler, void *pointer, size_t oldSize,
             collectGarbage(vm, compiler);
         }
 #endif // DEBUG_STRESS_GC
-
-        if (vm->bytesAllocated > vm->nextGC) {
-            collectGarbage(vm, compiler);
-        }
     }
+
     if (newSize == 0) {
         free(pointer);
         return NULL;

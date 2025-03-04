@@ -21,7 +21,7 @@ static void *allocateObject(VM *vm, Compiler *compiler, size_t size, ObjType typ
     vm->objects = object;
 
 #ifdef DEBUG_LOG_GC
-    printf("%p allocate %zu for %d", (void *)object, size, type);
+    printf("%p allocate %zu for %d\n", (void *)object, size, type);
 #endif // DEBUG_LOG_GC
 
     return object;
