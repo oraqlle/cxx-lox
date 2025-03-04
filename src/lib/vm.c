@@ -149,6 +149,13 @@ static void closeUpvalues(VM *vm, Value *last) {
     }
 }
 
+static void defineMethod(VM *vm, Compiler *compiler, ObjString *name) {
+    Value method = peek(vm, 0);
+    ObjClass *klass = AS_CLASS(method);
+    tableSet(vm, compiler, &klass->methods, name, method);
+    pop(vm);
+}
+
 static bool isFalsey(Value value) {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
@@ -462,6 +469,9 @@ static InterpreterResult run(VM *vm, Compiler *compiler) {
             }
             case OP_CLASS:
                 push(vm, OBJ_VAL(newClass(vm, compiler, READ_STRING())));
+                break;
+            case OP_METHOD:
+                defineMethod(vm, compiler, READ_STRING());
                 break;
         }
     }

@@ -12,6 +12,7 @@
 #include "object.h"
 #include "scanner.h"
 #include "value.h"
+#include "vm.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -641,17 +642,34 @@ static void function(Parser *parser, Scanner *scanner, VM *vm, Compiler *compile
     }
 }
 
+static void method(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {
+    consume(parser, scanner, TOKEN_IDENTIFIER, "Expect method name.");
+    uint8_t constant = identifierConstant(parser, &parser->previous, compiler, vm);
+
+    FunctionType type = TYPE_FUNCTION;
+    function(parser, scanner, vm, compiler, type);
+    emitBytes(parser, OP_METHOD, constant, compiler, vm);
+}
+
 static void classDeclaration(Parser *parser, Scanner *scanner, VM *vm,
                              Compiler *compiler) {
     consume(parser, scanner, TOKEN_IDENTIFIER, "Expect class name.");
+    Token className = parser->previous;
     uint8_t nameConstant = identifierConstant(parser, &parser->previous, compiler, vm);
-    declareVariable(parser, compiler);
 
+    declareVariable(parser, compiler);
     emitBytes(parser, OP_CLASS, nameConstant, compiler, vm);
     defineVariable(parser, compiler, vm, nameConstant);
 
+    namedVariable(parser, scanner, vm, compiler, false, className);
     consume(parser, scanner, TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+
+    while (!check(parser, TOKEN_RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+        method(parser, scanner, vm, compiler);
+    }
+
     consume(parser, scanner, TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+    pop(vm);
 }
 
 static void funDeclaration(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler) {

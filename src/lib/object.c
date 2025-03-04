@@ -76,6 +76,7 @@ ObjInstance *newInstance(VM *vm, Compiler *compiler, ObjClass *klass) {
 ObjClass *newClass(VM *vm, Compiler *compiler, ObjString *name) {
     ObjClass *klass = ALLOCATE_OBJ(vm, compiler, ObjClass, OBJ_CLASS);
     klass->name = name;
+    initTable(&klass->methods);
     return klass;
 }
 
