@@ -58,6 +58,7 @@ typedef struct {
 
 typedef enum {
     TYPE_FUNCTION,
+    TYPE_METHOD,
     TYPE_SCRIPT,
 } FunctionType;
 
@@ -76,10 +77,14 @@ struct Compiler {
     intmax_t scopeDepth;
 };
 
+struct ClassCompiler {
+    struct ClassCompiler *enclosing;
+};
+
 /**
  * @brief Function type for functions in parsing lookup table.
  */
-typedef void (*ParseFn)(Parser *, Scanner *, VM *, Compiler *, bool);
+typedef void (*ParseFn)(Parser *, Scanner *, VM *, Compiler *, ClassCompiler *, bool);
 
 /**
  * @brief Parsing rule.student team member

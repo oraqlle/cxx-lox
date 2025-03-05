@@ -85,6 +85,11 @@ static bool call(VM *vm, ObjClosure *closure, uint8_t argCount) {
 static bool callValue(VM *vm, Compiler *compiler, Value callee, uint8_t argCount) {
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
+            case OBJ_BOUND_METHOD: {
+                ObjBoundMethod *bound = AS_BOUND_METHOD(callee);
+                vm->stackTop[-argCount - 1] = bound->receiver;
+                return call(vm, bound->method, argCount);
+            }
             case OBJ_CLASS: {
                 ObjClass *klass = AS_CLASS(callee);
                 vm->stackTop[-argCount - 1] = OBJ_VAL(newInstance(vm, compiler, klass));
@@ -344,7 +349,7 @@ static InterpreterResult run(VM *vm, Compiler *compiler) {
                     break;
                 }
 
-                if (!bindMethod(&instance->klass, name)) {
+                if (!bindMethod(vm, compiler, instance->klass, name)) {
                     return INTERPRETER_RUNTIME_ERR;
                 }
 

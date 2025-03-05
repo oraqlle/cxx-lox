@@ -19,6 +19,9 @@ typedef struct VM VM;
 // Forward declare Compiler type
 typedef struct Compiler Compiler;
 
+// Forward declare ClassCompiler type
+typedef struct ClassCompiler ClassCompiler;
+
 #ifdef CLOX_DEVELOPER_MODE
 #undef DEBUG_TRACE_EXECUTION
 #define DEBUG_TRACE_EXECUTION
