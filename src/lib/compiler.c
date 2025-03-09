@@ -117,7 +117,12 @@ static void emitLoop(Parser *parser, size_t loopStart, Compiler *compiler, VM *v
 }
 
 static void emitReturn(Parser *parser, Compiler *compiler, VM *vm) {
-    emitByte(parser, OP_NIL, compiler, vm);
+    if (compiler->ftype == TYPE_INITIALIZER) {
+        emitBytes(parser, OP_GET_LOCAL, 0, compiler, vm);
+    } else {
+        emitByte(parser, OP_NIL, compiler, vm);
+    }
+
     emitByte(parser, OP_RETURN, compiler, vm);
 }
 
@@ -376,6 +381,10 @@ static void dot(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
     if (canAssign && match(parser, scanner, TOKEN_EQUAL)) {
         expression(parser, scanner, vm, compiler, currentClass);
         emitBytes(parser, OP_SET_PROPERTY, name, compiler, vm);
+    } else if (match(parser, scanner, TOKEN_LEFT_PAREN)) {
+        uint8_t argCount = argumentList(parser, scanner, vm, compiler, currentClass);
+        emitBytes(parser, OP_INVOKE, name, compiler, vm);
+        emitByte(parser, argCount, compiler, vm);
     } else {
         emitBytes(parser, OP_GET_PROPERTY, name, compiler, vm);
     }
@@ -664,8 +673,13 @@ static void method(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
     consume(parser, scanner, TOKEN_IDENTIFIER, "Expect method name.");
     uint8_t constant = identifierConstant(parser, &parser->previous, compiler, vm);
 
-    FunctionType type = TYPE_METHOD;
-    function(parser, scanner, vm, compiler, currentClass, type);
+    FunctionType ftype = TYPE_METHOD;
+
+    if (parser->previous.length == 4 && memcmp(parser->previous.start, "init", 4) == 0) {
+        ftype = TYPE_INITIALIZER;
+    }
+
+    function(parser, scanner, vm, compiler, currentClass, ftype);
     emitBytes(parser, OP_METHOD, constant, compiler, vm);
 }
 
@@ -744,6 +758,10 @@ static void returnStatement(Parser *parser, Scanner *scanner, VM *vm, Compiler *
     if (match(parser, scanner, TOKEN_SEMICOLON)) {
         emitReturn(parser, compiler, vm);
     } else {
+        if (compiler->ftype == TYPE_INITIALIZER) {
+            error(parser, "Can't return a value from an initializer.");
+        }
+
         expression(parser, scanner, vm, compiler, currentClass);
         consume(parser, scanner, TOKEN_SEMICOLON, "Expect ';' after return value.");
         emitByte(parser, OP_RETURN, compiler, vm);

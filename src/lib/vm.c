@@ -93,6 +93,15 @@ static bool callValue(VM *vm, Compiler *compiler, Value callee, uint8_t argCount
             case OBJ_CLASS: {
                 ObjClass *klass = AS_CLASS(callee);
                 vm->stackTop[-argCount - 1] = OBJ_VAL(newInstance(vm, compiler, klass));
+
+                Value initializer;
+                if (tableGet(&klass->methods, vm->initString, &initializer)) {
+                    return call(vm, AS_CLOSURE(initializer), argCount);
+                } else if (argCount != 0) {
+                    runtimeError(vm, "Expected 0 arguments but got %zu.", argCount);
+                    return false;
+                }
+
                 return true;
             }
             case OBJ_CLOSURE:
@@ -118,6 +127,36 @@ static bool callValue(VM *vm, Compiler *compiler, Value callee, uint8_t argCount
 
     runtimeError(vm, "Can only call functions and classes.");
     return false;
+}
+
+static bool invokeFromClass(VM *vm, ObjClass *klass, ObjString *name, uint8_t argCount) {
+    Value method;
+
+    if (!tableGet(&klass->methods, name, &method)) {
+        runtimeError(vm, "Undefined property '%s'.", name->chars);
+        return false;
+    }
+
+    return call(vm, AS_CLOSURE(method), argCount);
+}
+
+static bool invoke(VM *vm, Compiler *compiler, ObjString *name, uint8_t argCount) {
+    Value receiver = peek(vm, argCount);
+
+    if (!IS_INSTANCE(receiver)) {
+        runtimeError(vm, "Only instances have methods.");
+        return false;
+    }
+
+    ObjInstance *instance = AS_INSTANCE(receiver);
+    Value value;
+
+    if (tableGet(&instance->fields, name, &value)) {
+        vm->stackTop[-argCount - 1] = value;
+        return callValue(vm, compiler, value, argCount);
+    }
+
+    return invokeFromClass(vm, instance->klass, name, argCount);
 }
 
 static bool bindMethod(VM *vm, Compiler *compiler, ObjClass *klass, ObjString *name) {
@@ -218,13 +257,19 @@ void initVM(VM *vm) {
     initTable(&vm->globals);
     initTable(&vm->strings);
 
+    vm->initString = NULL;
+    vm->initString = copyString(vm, NULL, 4, "init");
+
     defineNative(vm, NULL, "clock", clockNative, 0);
 }
 
 void freeVM(VM *vm, Compiler *compiler) {
-    freeObjects(vm, compiler);
     freeTable(vm, compiler, &vm->globals);
     freeTable(vm, compiler, &vm->strings);
+
+    vm->initString = NULL;
+
+    freeObjects(vm, compiler);
 }
 
 static InterpreterResult run(VM *vm, Compiler *compiler) {
@@ -444,6 +489,17 @@ static InterpreterResult run(VM *vm, Compiler *compiler) {
                 uint8_t argCount = READ_BYTE();
 
                 if (!callValue(vm, compiler, peek(vm, argCount), argCount)) {
+                    return INTERPRETER_RUNTIME_ERR;
+                }
+
+                frame = &vm->frames[vm->frameCount - 1];
+                break;
+            }
+            case OP_INVOKE: {
+                ObjString *method = READ_STRING();
+                uint8_t argCount = READ_BYTE();
+
+                if (!invoke(vm, compiler, method, argCount)) {
                     return INTERPRETER_RUNTIME_ERR;
                 }
 

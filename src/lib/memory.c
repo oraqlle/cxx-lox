@@ -202,6 +202,7 @@ static void markRoots(VM *vm, Compiler *compiler) {
 
     markTable(vm, &vm->globals);
     markCompilerRoots(vm, compiler);
+    markObject(vm, (Obj *)vm->initString);
 }
 
 static void traceReferences(VM *vm) {
