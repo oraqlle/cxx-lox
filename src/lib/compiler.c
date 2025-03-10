@@ -502,9 +502,18 @@ static void super_(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,
 
     namedVariable(parser, scanner, vm, compiler, currentClass, false,
                   syntheticToken("this"));
-    namedVariable(parser, scanner, vm, compiler, currentClass, false,
-                  syntheticToken("super"));
-    emitBytes(parser, OP_GET_SUPER, name, compiler, vm);
+
+    if (match(parser, scanner, TOKEN_LEFT_PAREN)) {
+        uint8_t argCount = argumentList(parser, scanner, vm, compiler, currentClass);
+        namedVariable(parser, scanner, vm, compiler, currentClass, false,
+                      syntheticToken("super"));
+        emitBytes(parser, OP_SUPER_INVOKE, name, compiler, vm);
+        emitByte(parser, argCount, compiler, vm);
+    } else {
+        namedVariable(parser, scanner, vm, compiler, currentClass, false,
+                      syntheticToken("super"));
+        emitBytes(parser, OP_GET_SUPER, name, compiler, vm);
+    }
 }
 
 static void this_(Parser *parser, Scanner *scanner, VM *vm, Compiler *compiler,

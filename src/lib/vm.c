@@ -516,6 +516,18 @@ static InterpreterResult run(VM *vm, Compiler *compiler) {
                 frame = &vm->frames[vm->frameCount - 1];
                 break;
             }
+            case OP_SUPER_INVOKE: {
+                ObjString *method = READ_STRING();
+                uint8_t argCount = READ_BYTE();
+                ObjClass *superclass = AS_CLASS(pop(vm));
+
+                if (!invokeFromClass(vm, superclass, method, argCount)) {
+                    return INTERPRETER_RUNTIME_ERR;
+                }
+
+                frame = &vm->frames[vm->frameCount - 1];
+                break;
+            }
             case OP_CLOSURE: {
                 ObjFunction *func = AS_FUNCTION(READ_CONSTANT());
                 ObjClosure *closure = newClosure(vm, compiler, func);
