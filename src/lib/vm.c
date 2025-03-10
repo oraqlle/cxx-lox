@@ -416,6 +416,16 @@ static InterpreterResult run(VM *vm, Compiler *compiler) {
 
                 break;
             }
+            case OP_GET_SUPER: {
+                ObjString *name = READ_STRING();
+                ObjClass *superclass = AS_CLASS(pop(vm));
+
+                if (!bindMethod(vm, compiler, superclass, name)) {
+                    return INTERPRETER_RUNTIME_ERR;
+                }
+
+                break;
+            }
             case OP_EQUAL: {
                 Value b = pop(vm);
                 Value a = pop(vm);
@@ -549,6 +559,21 @@ static InterpreterResult run(VM *vm, Compiler *compiler) {
             case OP_CLASS:
                 push(vm, OBJ_VAL(newClass(vm, compiler, READ_STRING())));
                 break;
+            case OP_INHERIT: {
+                Value superclass = peek(vm, 1);
+
+                if (!IS_CLASS(superclass)) {
+                    runtimeError(vm, "Superclass must be a class.");
+                    return INTERPRETER_RUNTIME_ERR;
+                }
+
+                ObjClass *subclass = AS_CLASS(peek(vm, 0));
+                tableAddAll(vm, compiler, &AS_CLASS(superclass)->methods,
+                            &subclass->methods);
+
+                pop(vm); // Pop subclass
+                break;
+            }
             case OP_METHOD:
                 defineMethod(vm, compiler, READ_STRING());
                 break;

@@ -80,6 +80,7 @@ struct Compiler {
 
 struct ClassCompiler {
     struct ClassCompiler *enclosing;
+    bool hasSuperclass;
 };
 
 /**
