@@ -355,8 +355,8 @@ static uint8_t argumentList(Parser *parser, Scanner *scanner, VM *vm, Compiler *
         do {
             expression(parser, scanner, vm, compiler, currentClass);
 
-            if (argCount) {
-                error(parser, "Can't have more  than 254 arguments.");
+            if (argCount == 255) {
+                error(parser, "Can't have more than 254 arguments.");
             }
 
             argCount += 1;
