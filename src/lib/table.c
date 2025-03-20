@@ -20,7 +20,7 @@ void freeTable(VM *vm, Compiler *compiler, Table *table) {
 }
 
 static Entry *findEntry(Entry *entries, size_t capacity, ObjString *key) {
-    uint32_t index = key->hash & (capacity - 1);
+    uint32_t index = key->hash & ((uint32_t)capacity - 1);
     Entry *tombstone = NULL;
 
     for (;;) {
@@ -40,7 +40,7 @@ static Entry *findEntry(Entry *entries, size_t capacity, ObjString *key) {
             return entry;
         }
 
-        index = (index + 1) & (capacity - 1);
+        index = (index + 1) & ((uint32_t)capacity - 1);
     }
 }
 
@@ -156,7 +156,7 @@ ObjString *tableFindString(Table *table, const char *chars, size_t length,
     }
 }
 
-void tableRemoveWhite(VM *vm, Compiler *compiler, Table *table) {
+void tableRemoveWhite(Table *table) {
     for (size_t idx = 0; idx < table->capacity; idx++) {
         Entry *entry = &table->entries[idx];
 

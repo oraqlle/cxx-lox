@@ -244,7 +244,7 @@ void collectGarbage(VM *vm, Compiler *compiler) {
 
     markRoots(vm, compiler);
     traceReferences(vm);
-    tableRemoveWhite(vm, compiler, &vm->strings);
+    tableRemoveWhite(&vm->strings);
     sweep(vm, compiler);
 
     vm->nextGC = vm->bytesAllocated * GC_HEAP_GROW_FACTOR;

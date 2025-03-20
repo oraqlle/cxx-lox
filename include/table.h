@@ -63,7 +63,7 @@ ObjString *tableFindString(Table *table, const char *chars, size_t length, uint3
 /**
  * @brief Removes the `week' references to strings marked for GC
  */
-void tableRemoveWhite(VM *vm, Compiler *compiler, Table *table);
+void tableRemoveWhite(Table *table);
 
 /**
  * @brief Marks globals in the VMs hash table to not be swept by GC
